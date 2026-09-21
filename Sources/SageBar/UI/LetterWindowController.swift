@@ -71,9 +71,10 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
     }
 
     func showIndex() {
-        LetterStore.renderIndex()
+        let engine = SageEngine.shared
+        LetterStore.renderArchive(seat: engine.todayPersona ?? engine.nextPersona(), generating: engine.isGenerating)
         show()
-        window?.title = "SageBar — 지난 조언"
+        window?.title = "SageBar — 현자의 서재"
         webView.loadFileURL(Paths.indexPage, allowingReadAccessTo: Paths.appSupport)
     }
 

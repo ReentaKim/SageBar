@@ -17,6 +17,8 @@ enum URLRouter {
             SageEngine.shared.regenerate(persona: query("persona").flatMap(PersonaID.init(rawValue:)))
         case "archive":
             LetterWindowController.shared.showIndex()
+        case "profile":
+            if ProfileBuilder.exists { NSWorkspace.shared.open(Paths.profile) } else { NSWorkspace.shared.open(Paths.appSupport) }
         case "settings":
             NSApp.activate(ignoringOtherApps: true)
             NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)

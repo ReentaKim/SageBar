@@ -45,6 +45,20 @@ SPEC = {
     "reaction-pleased.png": (256, 256, 1, False),  # 점검 상자 표정: 대체로 했다 (64×64)
     "reaction-stern.png": (256, 256, 1, False),    # 점검 상자 표정: 대체로 안 했다 (64×64)
 }
+UI_DESK_DIR = os.path.join(ROOT, "Resources", "ui", "desk")
+UI_DESK_SPEC = {   # 「현자의 서재」 장면 (요청서 5)
+    "desk-bg.png": (960, 600, 1, False),
+    "sky-morning.png": (160, 120, 1, False), "sky-day.png": (160, 120, 1, False),
+    "sky-evening.png": (160, 120, 1, False), "sky-night.png": (160, 120, 1, False),
+    "scroll-zhuge.png": (128, 56, 1, False), "scroll-socrates.png": (128, 56, 1, False),
+    "scroll-nietzsche.png": (128, 56, 1, False), "scroll-sejong.png": (128, 56, 1, False),
+    "scroll-blank.png": (128, 56, 1, False),
+    "bundle.png": (112, 96, 1, False), "bundle-open.png": (112, 96, 1, False),
+    "lamp.png": (128, 96, 2, False),
+    "ledger.png": (272, 288, 1, False), "menu-panel.png": (272, 240, 1, False),
+    "menu-today.png": (64, 64, 1, False), "menu-new.png": (64, 64, 1, False),
+    "menu-profile.png": (64, 64, 1, False), "menu-settings.png": (64, 64, 1, False),
+}
 UI_DIR = os.path.join(ROOT, "Resources", "ui")
 UI_SPEC = {   # 인물 공통 UI 아이콘 (Resources/ui/)
     "fb-sharp.png": (96, 96, 1, False),    # 찔렸다 아이콘 (24×24 원본)
@@ -52,7 +66,7 @@ UI_SPEC = {   # 인물 공통 UI 아이콘 (Resources/ui/)
     "fb-miss.png": (96, 96, 1, False),     # 내 얘기와 달랐다 아이콘 (24×24 원본)
     "fb-stamp.png": (128, 128, 1, False),  # 반응 남긴 뒤 찍히는 "새김" 도장 (32×32 원본)
 }
-OPAQUE = {"header.png", "backdrop.png"}   # 꽉 채운 그림이어야 하는 것
+OPAQUE = {"header.png", "backdrop.png", "desk-bg.png", "sky-morning.png", "sky-day.png", "sky-evening.png", "sky-night.png"}   # 꽉 채운 그림이어야 하는 것
 SCALE = 4
 
 
@@ -169,6 +183,15 @@ def main():
                 print(f"   - {p}")
         else:
             print("[ui] OK")
+    if os.path.isdir(UI_DESK_DIR):
+        probs = check_dir(UI_DESK_DIR, UI_DESK_SPEC)
+        if probs:
+            all_ok = False
+            print(f"[ui/desk] 문제 {len(probs)}건")
+            for p in probs:
+                print(f"   - {p}")
+        else:
+            print("[ui/desk] OK")
     if "--contact" in sys.argv:
         contact_sheet(os.path.join(ROOT, "docs", "screenshots", "characters-contact.png"))
     print("\n결과:", "전부 OK" if all_ok else "규격 미달 항목 있음")
