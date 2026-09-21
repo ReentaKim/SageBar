@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko" data-persona="{{PERSONA_ID}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{LETTER_NAME}} — {{DATE_LINE}}</title>
+<link rel="stylesheet" href="../assets/styles/base.css">
+<link rel="stylesheet" href="../assets/styles/persona-{{PERSONA_ID}}.css">
+</head>
+<body class="persona-{{PERSONA_ID}}">
+<div class="sage-scroll-wrap">
+  <div class="sage-rod sage-rod-left" aria-hidden="true"></div>
+  <div class="sage-rod sage-rod-right" aria-hidden="true"></div>
+
+  <div class="sage-paper">
+    <div class="sage-header">
+      <div class="sage-title-block">
+        <p class="sage-kicker">{{PERSONA_NAME}}</p>
+        <p class="sage-title">{{LETTER_NAME}}</p>
+        <p class="sage-subtitle">{{SUBTITLE}}</p>
+      </div>
+      <div class="sage-date-block">{{DATE_LINE}}{{GANJI_LINE}}</div>
+    </div>
+
+    <p class="sage-opening">{{GREETING}}</p>
+
+    <div class="sage-body">
+      <h2 class="sage-section-title"><span class="mark">{{UPPER_MARK}}</span> {{UPPER_TITLE}}</h2>
+      {{UPPER_HTML}}
+
+      <h2 class="sage-section-title"><span class="mark">{{LOWER_MARK}}</span> {{LOWER_TITLE}}</h2>
+      {{LOWER_HTML}}
+    </div>
+
+    <div class="sage-closing">
+      {{CLOSING_HTML}}
+      <div class="sage-quote">
+        <span class="korean">{{QUOTE_KOREAN}}</span>
+        <span class="source">— {{QUOTE_SOURCE}}</span>
+      </div>
+      <p class="sage-signoff">{{SIGNOFF}}</p>
+    </div>
+
+    <div class="sage-seal" aria-hidden="true">{{SEAL_SVG}}</div>
+  </div>
+
+  <div class="sage-controls">
+    <button class="sage-btn" onclick="window.print()">보관 (인쇄・PDF)</button>
+    {{PREV_LINK}}
+    <a class="sage-btn" href="index.html">지난 조언 모두</a>
+  </div>
+  <p class="sage-meta">{{UPPER_MARK}} {{UPPER_COUNT}}자 · {{LOWER_MARK}} {{LOWER_COUNT}}자 · 총 {{TOTAL_COUNT}}자 · {{MODEL}}</p>
+</div>
+</body>
+</html>

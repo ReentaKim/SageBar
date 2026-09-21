@@ -1,0 +1,21 @@
+/* 소크라테스 — 아테네의 대리석과 올리브, 테라코타 */
+.persona-socrates{
+  --hanji:#f4f1ea; --hanji-edge:#e6e1d3; --ink:#1f1e1a; --ink-soft:#4d4a40;
+  --vermilion:#b5532a; --vermilion-deep:#7e3a1d; --rod:#5b6b4a; --rod-light:#7a8c63;
+  --gold:#a89a6b; --paper-shadow:rgba(31,30,26,.25);
+}
+@media (prefers-color-scheme: dark){ .persona-socrates{
+  --hanji:#1c1b17; --hanji-edge:#141311; --ink:#ece7d9; --ink-soft:#c2bba6;
+  --vermilion:#d97a4b; --vermilion-deep:#a3532b; --rod:#2c3526; --rod-light:#3f4b36;
+  --gold:#bfae78; --paper-shadow:rgba(0,0,0,.6);
+}}
+.persona-socrates .sage-rod{border-radius:3px;background:repeating-linear-gradient(180deg,var(--rod) 0 14px,var(--rod-light) 14px 18px);}
+.persona-socrates .sage-rod::before,.persona-socrates .sage-rod::after{border-radius:2px;height:12px;left:-6px;right:-6px;background:var(--gold);}
+.persona-socrates .sage-paper{animation:none;background-image:linear-gradient(180deg,var(--hanji) 0%,var(--hanji-edge) 100%);border:1px solid var(--gold);}
+.persona-socrates .sage-header{border-bottom:2px solid var(--ink);}
+.persona-socrates .sage-kicker{margin:0 0 4px;font-size:13px;letter-spacing:.3em;color:var(--ink-soft);text-transform:uppercase;}
+.persona-socrates .sage-title{letter-spacing:.2em;}
+.persona-socrates .sage-date-block{writing-mode:horizontal-tb;text-align:right;}
+.persona-socrates .sage-h3 .dot{color:var(--rod-light);}
+.persona-socrates .sage-body p{text-indent:0;}
+.persona-socrates .sage-quote{border-left-color:var(--rod-light);background:rgba(91,107,74,.08);}

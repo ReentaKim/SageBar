@@ -1,0 +1,11 @@
+<svg class="sage-seal-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="니체 인장">
+  <g transform="rotate(6 70 70)">
+    <rect x="14" y="14" width="112" height="112" fill="#0d0c0b" stroke="#c9a24a" stroke-width="3"/>
+    <rect x="22" y="22" width="96" height="96" fill="none" stroke="#c8322e" stroke-width="1.5"/>
+    <g fill="#c9a24a" font-family="'Nanum Myeongjo','AppleMyungjo',serif" font-weight="800" text-anchor="middle">
+      <text x="70" y="66" font-size="30">니체</text>
+      <text x="70" y="96" font-size="12" letter-spacing="3">F. NIETZSCHE</text>
+    </g>
+    <path d="M40 40 h60 M40 100 h60" stroke="#c8322e" stroke-width="2"/>
+  </g>
+</svg>

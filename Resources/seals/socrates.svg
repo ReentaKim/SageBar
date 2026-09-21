@@ -1,0 +1,9 @@
+<svg class="sage-seal-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="소크라테스 메달">
+  <circle cx="70" cy="70" r="60" fill="#e6e1d3" stroke="#5b6b4a" stroke-width="5"/>
+  <circle cx="70" cy="70" r="50" fill="none" stroke="#a89a6b" stroke-width="1.5" stroke-dasharray="3 4"/>
+  <g fill="#1f1e1a" font-family="'Nanum Myeongjo','AppleMyungjo',serif" font-weight="700" text-anchor="middle">
+    <text x="70" y="62" font-size="20">소크라</text>
+    <text x="70" y="88" font-size="20">테스</text>
+  </g>
+  <text x="70" y="118" font-size="11" fill="#5b6b4a" text-anchor="middle" font-family="serif" letter-spacing="2">ΑΘΗΝΑΙ</text>
+</svg>

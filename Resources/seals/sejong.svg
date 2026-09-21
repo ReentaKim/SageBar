@@ -1,0 +1,11 @@
+<svg class="sage-seal-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="세종 어보">
+  <g transform="rotate(-3 70 70)">
+    <rect x="12" y="12" width="116" height="116" rx="6" fill="#1f6f6b"/>
+    <rect x="12" y="12" width="116" height="116" rx="6" fill="none" stroke="#c39a3b" stroke-width="5"/>
+    <rect x="24" y="24" width="92" height="92" rx="3" fill="none" stroke="#c39a3b" stroke-width="1.5"/>
+    <g fill="#f3ecd9" font-family="'Nanum Myeongjo','AppleMyungjo',serif" font-weight="800" text-anchor="middle">
+      <text x="70" y="62" font-size="30">세종</text>
+      <text x="70" y="98" font-size="26">어보</text>
+    </g>
+  </g>
+</svg>
