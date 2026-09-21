@@ -173,8 +173,10 @@ enum HTMLRenderer {
         let base = "\(assetsPrefix)/characters/\(persona.id.rawValue)"
         var rules: [String] = []
         if hasCharacterFile(persona, "backdrop.png") {
-            // 질감 위에 어두운 막을 한 겹 얹어 대비를 낮춘다 — 시선이 종이(본문)에 머물게
-            rules.append("html,body{background-image:linear-gradient(rgba(0,0,0,.34),rgba(0,0,0,.34)),url('\(base)/backdrop.png');background-size:auto,256px 256px;background-repeat:repeat;image-rendering:pixelated;}")
+            // 질감 위에 어두운 막을 한 겹 얹어 대비를 낮춘다 — 시선이 종이(본문)에 머물게.
+            // 농도는 인물별(디자인 검토 1차 회신): 이미 검은 니체는 얕게, 청록 비단 세종은 중간.
+            let shade: Double = { switch persona.id { case .nietzsche: return 0.08; case .sejong: return 0.26; default: return 0.34 } }()
+            rules.append("html,body{background-image:linear-gradient(rgba(0,0,0,\(shade)),rgba(0,0,0,\(shade))),url('\(base)/backdrop.png');background-size:auto,256px 256px;background-repeat:repeat;image-rendering:pixelated;}")
         }
         if hasCharacterFile(persona, "rod.png") {
             rules.append(".sage-rod{background:url('\(base)/rod.png') repeat-y center top;background-size:100% auto;image-rendering:pixelated;border-radius:0;box-shadow:none;}")

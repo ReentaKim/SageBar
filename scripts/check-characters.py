@@ -49,6 +49,7 @@ UI_DIR = os.path.join(ROOT, "Resources", "ui")
 UI_SPEC = {   # 인물 공통 UI 아이콘 (Resources/ui/)
     "fb-sharp.png": (96, 96, 1, False),    # 찔렸다 아이콘 (24×24 원본)
     "fb-dull.png": (96, 96, 1, False),     # 뻔했다 아이콘 (24×24 원본)
+    "fb-miss.png": (96, 96, 1, False),     # 내 얘기와 달랐다 아이콘 (24×24 원본)
     "fb-stamp.png": (128, 128, 1, False),  # 반응 남긴 뒤 찍히는 "새김" 도장 (32×32 원본)
 }
 OPAQUE = {"header.png", "backdrop.png"}   # 꽉 채운 그림이어야 하는 것

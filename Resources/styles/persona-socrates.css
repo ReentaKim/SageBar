@@ -14,7 +14,7 @@
 .persona-socrates .sage-paper{animation:none;background-image:linear-gradient(180deg,var(--hanji) 0%,var(--hanji-edge) 100%);border:1px solid var(--gold);}
 .persona-socrates .sage-header{border-bottom:2px solid var(--ink);}
 .persona-socrates .sage-kicker{margin:0 0 4px;font-size:13px;letter-spacing:.3em;color:var(--ink-soft);text-transform:uppercase;}
-.persona-socrates .sage-title{letter-spacing:.2em;}
+.persona-socrates .sage-title{letter-spacing:.05em;}
 .persona-socrates .sage-date-block{writing-mode:horizontal-tb;text-align:right;}
 .persona-socrates .sage-h3 .dot{color:var(--rod-light);}
 .persona-socrates .sage-body p{text-indent:0;}
