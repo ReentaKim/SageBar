@@ -24,7 +24,7 @@ struct SageBarApp: App {
 enum HeadlessCLI {
     static func runIfRequested() {
         let args = CommandLine.arguments
-        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") else { return }
+        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") else { return }
 
         func value(after flag: String) -> String? {
             guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -54,6 +54,24 @@ enum HeadlessCLI {
                                             model: model, outputURL: preview)
                 print(preview.path)
                 exit(0)
+            }
+            // --debug-menu-header <persona> <out.png> [--generating]: 메뉴 상단 캐릭터 칸을 그림으로 떠서 확인
+            if args.contains("--debug-menu-header") {
+                let pid = value(after: "--debug-menu-header").flatMap(PersonaID.init(rawValue:)) ?? .zhuge
+                let out = args.first(where: { $0.hasSuffix(".png") }) ?? "menu-header.png"
+                let generating = args.contains("--generating")
+                let data: Data? = MainActor.assumeIsolated {   // App.init은 메인 스레드에서 돈다
+                    let view = MenuHeaderView()
+                    view.update(persona: pid, title: "오늘의 \(pid.persona.letterName) — \(pid.persona.displayName)",
+                                subtitle: generating ? "글을 짓는 중…" : "말은 짧아도 뜻은 길게", generating: generating)
+                    view.stop()
+                    guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return nil }
+                    view.cacheDisplay(in: view.bounds, to: rep)
+                    return rep.representation(using: .png, properties: [:])
+                }
+                guard let data else { exit(1) }
+                try data.write(to: URL(fileURLWithPath: out))
+                print(out); exit(0)
             }
             // --rerender [YYYY-MM-DD]: 보관된 원문(raw/)을 현재 템플릿·자산으로 다시 엮는다 (claude 호출 없음).
             // 템플릿이나 캐릭터 그림이 바뀐 뒤 이미 지어진 편지에 새 모습을 입힐 때 쓴다.

@@ -61,6 +61,7 @@ enum HTMLRenderer {
             "{{MODEL}}": model.rawValue,
             "{{AVATAR_HTML}}": hasBanner ? "" : avatarHTML(persona),   // 배너가 있으면 캐릭터는 배너 위에
             "{{BANNER_HTML}}": bannerHTML(persona),
+            "{{BACKDROP_CSS}}": backdropCSS(persona),
         ]
         var html = template
         for (k, v) in replacements { html = html.replacingOccurrences(of: k, with: v) }
@@ -107,6 +108,23 @@ enum HTMLRenderer {
         return loadResource("seals/\(persona.id.rawValue).svg") ?? ""
     }
 
+    /// 종이 뒤 배경·두루마리 축 그림이 있으면 그것으로 덮어쓰는 CSS. 없으면 빈 문자열(기존 그라데이션 유지).
+    static func backdropCSS(_ persona: Persona, assetsPrefix: String = "../assets") -> String {
+        let base = "\(assetsPrefix)/characters/\(persona.id.rawValue)"
+        var rules: [String] = []
+        if hasCharacterFile(persona, "backdrop.png") {
+            rules.append("html,body{background-image:url('\(base)/backdrop.png');background-size:256px 256px;background-repeat:repeat;image-rendering:pixelated;}")
+        }
+        if hasCharacterFile(persona, "rod.png") {
+            rules.append(".sage-rod{background:url('\(base)/rod.png') repeat-y center top;background-size:100% auto;image-rendering:pixelated;border-radius:0;box-shadow:none;}")
+        }
+        if hasCharacterFile(persona, "rodcap.png") {
+            rules.append(".sage-rod::before,.sage-rod::after{background:url('\(base)/rodcap.png') no-repeat center;background-size:contain;image-rendering:pixelated;border-radius:0;width:36px;height:36px;left:-9px;right:auto;}")
+            rules.append(".sage-rod::before{top:-30px;} .sage-rod::after{bottom:-30px;transform:scaleY(-1);}")
+        }
+        return rules.isEmpty ? "" : "<style>\n\(rules.joined(separator: "\n"))\n</style>"
+    }
+
     static func portraitThumbHTML(_ persona: Persona) -> String {
         guard hasCharacterFile(persona, "portrait.png") else { return "" }
         return "<img class=\"sage-thumb\" src=\"../assets/characters/\(persona.id.rawValue)/portrait.png\" alt=\"\">"
@@ -128,6 +146,7 @@ enum HTMLRenderer {
             .replacingOccurrences(of: "{{DOTS_CLASS}}", with: animated ? "dots" : "")
             .replacingOccurrences(of: "{{EXTRA}}", with: extra)
             .replacingOccurrences(of: "{{SPRITE_HTML}}", with: spriteHTML(persona, writing: animated))
+            .replacingOccurrences(of: "{{BACKDROP_CSS}}", with: backdropCSS(persona))
             .replacingOccurrences(of: "{{PERSONA_ID}}", with: persona.id.rawValue)
             .replacingOccurrences(of: "{{ASSETS}}", with: "../assets")
         try? html.write(to: Paths.waitingPage, atomically: true, encoding: .utf8)
@@ -145,6 +164,7 @@ enum HTMLRenderer {
             .replacingOccurrences(of: "{{DOTS_CLASS}}", with: "")
             .replacingOccurrences(of: "{{EXTRA}}", with: "<div class=\"err\">\(HTMLEscape.escape(reason))</div>")
             .replacingOccurrences(of: "{{SPRITE_HTML}}", with: spriteHTML(persona, writing: false))
+            .replacingOccurrences(of: "{{BACKDROP_CSS}}", with: backdropCSS(persona))
             .replacingOccurrences(of: "{{PERSONA_ID}}", with: persona.id.rawValue)
             .replacingOccurrences(of: "{{ASSETS}}", with: "../assets")
         let url = LetterStore.letterURL(for: dateStr)

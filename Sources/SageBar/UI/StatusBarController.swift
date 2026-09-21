@@ -8,6 +8,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     private var item: NSStatusItem!
     private let menu = NSMenu()
+    private let header = MenuHeaderView()
+    private var iconTimer: Timer?
+    private var iconFrames: [NSImage] = []
+    private var iconFrameIndex = 0
     private var cancellables: Set<AnyCancellable> = []
 
     private override init() {
@@ -36,6 +40,31 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         let engine = SageEngine.shared
         let symbol = engine.menuSymbol
         let personaID = engine.todayPersona ?? engine.nextPersona()
+
+        // 글 짓는 동안: 메뉴바용 글 쓰는 실루엣(18×18 ×4)이 있으면 그것을 돌린다
+        iconTimer?.invalidate(); iconTimer = nil
+        if engine.isGenerating {
+            let sheet = Paths.resources.appendingPathComponent("characters/\(personaID.rawValue)/menubar-writing.png")
+            if let src = NSImage(contentsOf: sheet) {
+                iconFrames = Self.sliceTemplate(src, count: 4, size: 18)
+                if !iconFrames.isEmpty {
+                    iconFrameIndex = 0
+                    button.image = iconFrames[0]
+                    button.appearsDisabled = false
+                    button.toolTip = "SageBar — 글을 짓는 중"
+                    let t = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+                        Task { @MainActor in
+                            guard let self, !self.iconFrames.isEmpty else { return }
+                            self.iconFrameIndex = (self.iconFrameIndex + 1) % self.iconFrames.count
+                            self.item?.button?.image = self.iconFrames[self.iconFrameIndex]
+                        }
+                    }
+                    RunLoop.main.add(t, forMode: .common)
+                    iconTimer = t
+                    return
+                }
+            }
+        }
         let custom = Paths.resources.appendingPathComponent("characters/\(personaID.rawValue)/menubar.png")
         let image: NSImage?
         if let dot = NSImage(contentsOf: custom) {
@@ -52,15 +81,33 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         button.toolTip = engine.isGenerating ? "SageBar — 글을 짓는 중" : "SageBar — 현자의 아침"
     }
 
+    /// 가로 시트를 잘라 템플릿(검정+알파) 아이콘 프레임으로
+    static func sliceTemplate(_ src: NSImage, count: Int, size: CGFloat) -> [NSImage] {
+        let w = src.size.width / CGFloat(count), h = src.size.height
+        return (0..<count).map { i in
+            let img = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+                NSGraphicsContext.current?.imageInterpolation = .none
+                src.draw(in: rect, from: NSRect(x: w * CGFloat(i), y: 0, width: w, height: h), operation: .sourceOver, fraction: 1)
+                return true
+            }
+            img.isTemplate = true
+            return img
+        }
+    }
+
     // 메뉴를 열 때마다 현재 상태로 다시 그린다
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
         let engine = SageEngine.shared
         let onboarded = AppSettings.onboarded
 
-        let status = NSMenuItem(title: statusText(engine, onboarded: onboarded), action: nil, keyEquivalent: "")
-        status.isEnabled = false
-        menu.addItem(status)
+        // 맨 위: 도트 캐릭터 + 상태 (캐릭터 파일이 없으면 글만)
+        let personaID = engine.todayPersona ?? engine.nextPersona()
+        let (title, subtitle) = headerText(engine, onboarded: onboarded)
+        header.update(persona: personaID, title: title, subtitle: subtitle, generating: engine.isGenerating)
+        let headerItem = NSMenuItem()
+        headerItem.view = header
+        menu.addItem(headerItem)
         menu.addItem(.separator())
 
         if onboarded {
@@ -94,19 +141,22 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(makeItem("SageBar \(version) 종료", #selector(quit), "q"))
     }
 
-    private func statusText(_ engine: SageEngine, onboarded: Bool) -> String {
+    func menuDidClose(_ menu: NSMenu) { header.stop() }
+
+    private func headerText(_ engine: SageEngine, onboarded: Bool) -> (String, String) {
         switch engine.status {
         case .generating(let id, let stage):
-            return "\(id.persona.displayName) · \(stage)…"
+            return ("\(id.persona.displayName), 붓을 들었습니다", "\(stage)…")
         case .failed(let msg):
-            return "실패: \(msg.prefix(60))"
+            return ("오늘은 붓을 놓았습니다", String(msg.prefix(80)))
         case .idle:
             if let p = engine.todayPersona {
-                return "오늘의 \(p.persona.letterName) — \(p.persona.displayName)"
+                let sub = LetterStore.history().last { $0.date == LetterStore.dateString() }?.subtitle ?? ""
+                return ("오늘의 \(p.persona.letterName) — \(p.persona.displayName)", sub)
             } else if onboarded {
-                return "오늘의 조언이 아직 없습니다 · 다음: \(engine.nextPersona().persona.displayName)"
+                return ("오늘의 조언이 아직 없습니다", "다음 차례: \(engine.nextPersona().persona.displayName)")
             } else {
-                return "현자의 아침 — 처음 설정이 필요합니다"
+                return ("현자의 아침", "처음 설정이 필요합니다")
             }
         }
     }
