@@ -41,8 +41,8 @@ struct LetterGenerator {
         try? raw.write(to: LetterStore.rawURL(for: dateStr), atomically: true, encoding: .utf8)
         var parsed = try LetterParser.parse(raw)
 
-        if !parsed.meetsLength(length) {
-            LetterStore.log("[\(id.rawValue)] 분량 미달 (\(parsed.upperCount)/\(parsed.lowerCount)) — 재시도")
+        if !parsed.nearlyMeetsLength(length) {
+            LetterStore.log("[\(id.rawValue)] 분량 크게 미달 (\(parsed.upperCount)/\(parsed.lowerCount)) — 재시도")
             onStage("분량이 모자라 다시 짓는 중")
             if let retryRaw = try? ClaudeCLI.run(prompt: prompt + PromptBuilder.retryNote(length: length), model: model),
                let retryParsed = try? LetterParser.parse(retryRaw),
@@ -61,7 +61,7 @@ struct LetterGenerator {
         let url = try HTMLRenderer.render(letter: parsed, persona: persona, date: date, model: model)
         LetterStore.appendHistory(HistoryEntry(date: dateStr, persona: id.rawValue, subtitle: parsed.subtitle))
         LetterStore.renderIndex()
-        LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (\(parsed.upperCount)/\(parsed.lowerCount)/\(parsed.totalCount)자, 분량 \(parsed.meetsLength(length) ? "충족" : "미달"))")
+        LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (\(parsed.upperCount)/\(parsed.lowerCount)/\(parsed.totalCount)자, 분량 \(parsed.meetsLength(length) ? "충족" : (parsed.nearlyMeetsLength(length) ? "근접" : "미달")))")
 
         // 5) 인물지가 오래됐으면 뒤에서 조용히 갱신
         if ProfileBuilder.isStale {

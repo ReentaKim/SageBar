@@ -20,12 +20,13 @@ enum HTMLRenderer {
     }
 
     @discardableResult
-    static func render(letter: ParsedLetter, persona: Persona, date: Date, model: ClaudeModel) throws -> URL {
+    static func render(letter: ParsedLetter, persona: Persona, date: Date, model: ClaudeModel,
+                       outputURL: URL? = nil) throws -> URL {
         guard let template = loadResource("templates/letter.html") else {
             throw LetterParser.ParseError(message: "템플릿(templates/letter.html)을 찾을 수 없습니다.")
         }
         let dateStr = LetterStore.dateString(date)
-        let outURL = LetterStore.letterURL(for: dateStr)
+        let outURL = outputURL ?? LetterStore.letterURL(for: dateStr)
         let year = Calendar.current.component(.year, from: date)
         let seal = loadResource("seals/\(persona.id.rawValue).svg") ?? ""
 
