@@ -26,6 +26,7 @@
     </div>
 
     <p class="sage-opening">{{GREETING}}</p>
+    {{FOLLOWUP_HTML}}
 
     <div class="sage-body">
       <h2 class="sage-section-title"><span class="mark">{{UPPER_MARK}}</span> {{UPPER_TITLE}}</h2>
@@ -47,6 +48,7 @@
     <div class="sage-seal" aria-hidden="true">{{SEAL_SVG}}</div>
   </div>
 
+  {{FEEDBACK_HTML}}
   <div class="sage-controls">
     <button class="sage-btn" onclick="window.print()">보관 (인쇄・PDF)</button>
     {{PREV_LINK}}
@@ -54,5 +56,22 @@
   </div>
   <p class="sage-meta">{{UPPER_MARK}} {{UPPER_COUNT}}자 · {{LOWER_MARK}} {{LOWER_COUNT}}자 · 총 {{TOTAL_COUNT}}자 · {{MODEL}}</p>
 </div>
+<script>
+(function () {
+  var box = document.querySelector('.sage-feedback'); if (!box) return;
+  var key = 'sagebar-fb-' + box.dataset.date;
+  function mark(v) {
+    box.querySelectorAll('.sage-fb').forEach(function (b) { b.classList.toggle('is-on', b.dataset.v === v); });
+    box.classList.add('done');
+  }
+  try { var saved = localStorage.getItem(key); if (saved && !box.classList.contains('done')) mark(saved); } catch (e) {}
+  box.querySelectorAll('.sage-fb').forEach(function (b) {
+    b.addEventListener('click', function () {
+      try { localStorage.setItem(key, b.dataset.v); } catch (e) {}
+      mark(b.dataset.v);   // 링크 이동(sagebar://)은 그대로 진행 — 앱이 받아 기록한다
+    });
+  });
+})();
+</script>
 </body>
 </html>

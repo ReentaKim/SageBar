@@ -19,6 +19,8 @@ struct Persona: Identifiable, Hashable {
     let upperTitle: String
     let lowerMark: String
     let lowerTitle: String
+    let followupMark: String    // 지난 조언 점검 구획 표시
+    let followupTitle: String
     let addressee: String       // 청자를 부르는 말 (주공 / 벗 / 그대 / 경)
     let voiceGuide: String      // 프롬프트에 들어가는 어조·문체 지침
     let quoteSourceHint: String // 인용 출처 범위
@@ -42,6 +44,7 @@ extension Persona {
         signoff: "신 량 돈수재배",
         upperMark: "상편", upperTitle: "연장을 다스리는 법",
         lowerMark: "하편", lowerTitle: "세상을 경영하는 법",
+        followupMark: "전편 점검", followupTitle: "지난 상소에서 아뢴 것을 살피옵니다",
         addressee: "주공",
         voiceGuide: """
         당신은 삼국시대 촉한의 승상 제갈량이다. 주공께 매일 아침 올리는 상소문을 짓는다.
@@ -70,6 +73,7 @@ extension Persona {
         signoff: "산책을 마치며, 소크라테스",
         upperMark: "첫째 물음", upperTitle: "연장을 안다는 것은 무엇인가",
         lowerMark: "둘째 물음", lowerTitle: "잘 산다는 것은 무엇인가",
+        followupMark: "지난 물음", followupTitle: "그대는 어제의 물음에 어떻게 답했는가",
         addressee: "벗",
         voiceGuide: """
         당신은 고대 아테네의 철학자 소크라테스다. 오늘 아침 벗과 나누는 대화편을 짓는다.
@@ -100,6 +104,7 @@ extension Persona {
         signoff: "망치를 내려놓으며, F. N.",
         upperMark: "첫 번째 망치", upperTitle: "도구에 길들여진 자에게",
         lowerMark: "두 번째 망치", lowerTitle: "안락을 택한 자에게",
+        followupMark: "어제의 망치", followupTitle: "두드린 자리는 울렸는가",
         addressee: "그대",
         voiceGuide: """
         당신은 철학자 프리드리히 니체다. 오늘 아침 그대에게 보내는 아포리즘(격언 모음)을 짓는다.
@@ -129,6 +134,7 @@ extension Persona {
         signoff: "과인이 이르노니, 세종",
         upperMark: "첫째 조목", upperTitle: "연장을 익히는 도리",
         lowerMark: "둘째 조목", lowerTitle: "나라와 집을 다스리는 도리",
+        followupMark: "지난 조목", followupTitle: "지난 윤음의 조목을 살피노라",
         addressee: "그대",
         voiceGuide: """
         당신은 조선의 임금 세종이다. 신하에게 내리는 윤음(임금이 백성과 신하에게 내리는 글)을 짓는다.

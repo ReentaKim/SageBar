@@ -75,6 +75,8 @@ By default they **rotate daily**. In Settings you can pin one, randomize, or exc
 2. **Every morning** — 20 minutes before your chosen time (default 07:00) today's letter is pre-generated; at the time, the window opens. If your Mac was asleep, it opens right after you log in. Once a day.
 3. **Generation** — profile + last 14 days of your prompts + recently covered topics (to avoid repetition) go into one call to the installed **Claude Code CLI** (`claude -p`). No API key; it uses the session you're already logged into.
 4. **No Chinese characters** — all four sages write in pure Hangul. If any slip through, it's logged.
+5. **Follow-up** — every letter ends with three concrete action items; the next letter opens by checking them against your conversations since ("done / not done / can't tell"). Advice carries over instead of resetting daily.
+6. **Feedback** — two buttons under each letter: *it stung* / *it was obvious*. Reactions feed the next prompt, so a run of "obvious" pushes the sage toward fewer generalities and more direct quotes.
 
 ## Install
 

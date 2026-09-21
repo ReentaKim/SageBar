@@ -283,8 +283,8 @@ body {
 .sage-meta {
   text-align: center;
   font-size: 12px;
-  color: var(--ink-soft);
-  opacity: 0.6;
+  color: var(--hanji-edge);   /* 종이 밖 어두운 배경 위 */
+  opacity: 0.75;
   margin-top: 14px;
 }
 
@@ -354,3 +354,41 @@ body {
 .sage-seal-png { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 @media (max-width: 640px) { .sage-banner { height: 150px; margin: -34px -20px 20px; } .sage-banner .sage-avatar { display: block; width: 96px; height: 96px; } .sage-banner .sage-talk { width: 96px; height: 96px; background-size: 288px 96px; } }
 @media print { .sage-banner { margin: 0 0 20px; } }
+
+/* ── 지난 조언 점검 ── */
+.sage-followup {
+  margin: 0 0 12px; padding: 6px 22px 14px;
+  border: 1px solid var(--gold); border-left: 4px solid var(--vermilion);
+  background: rgba(155, 34, 38, 0.04); border-radius: 4px;
+  font-size: 16px; line-height: 1.9;
+}
+.sage-followup .sage-section-title { margin: 12px 0 10px; font-size: 18px; }
+.sage-followup p { margin: 0 0 10px; text-indent: 1em; }
+.sage-followup strong { color: var(--vermilion); }
+
+/* ── 피드백 버튼 ── */
+.sage-feedback {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;
+  margin: 22px 14px 0; font-size: 14px; color: var(--hanji-edge);   /* 종이 밖(어두운 배경 위)에 놓이므로 밝은 글자 */
+}
+.sage-feedback-label { margin-right: 4px; }
+.sage-fb {
+  font-family: inherit; font-size: 14px; color: var(--ink);
+  background: var(--hanji); border: 1px solid var(--vermilion); border-radius: 999px;
+  padding: 7px 16px; text-decoration: none; cursor: pointer;
+}
+.sage-fb:hover { background: var(--vermilion); color: var(--hanji); }
+.sage-fb.is-on { background: var(--vermilion); color: var(--hanji); box-shadow: 0 0 0 3px rgba(155,34,38,.18); }
+.sage-feedback-thanks { display: none; width: 100%; text-align: center; font-size: 13px; opacity: .8; }
+.sage-feedback.done .sage-feedback-thanks { display: block; }
+@media print { .sage-feedback { display: none; } }
+
+/* 점검 상자: 캐릭터 표정 + 본문 */
+.sage-followup { display: flex; gap: 18px; align-items: flex-start; }
+.sage-followup-body { flex: 1; min-width: 0; }
+.sage-reaction { width: 96px; height: 96px; flex-shrink: 0; margin-top: 14px; image-rendering: pixelated; }
+.sage-followup.mood-stern { border-left-color: var(--vermilion); }
+.sage-followup.mood-pleased { border-left-color: var(--gold); background: rgba(176,141,62,.06); }
+.sage-fb-icon { width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; image-rendering: pixelated; }
+.sage-fb-stamp { width: 28px; height: 28px; vertical-align: -9px; margin-right: 6px; image-rendering: pixelated; }
+@media (max-width: 640px) { .sage-reaction { display: none; } }

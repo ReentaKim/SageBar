@@ -97,7 +97,9 @@ enum HeadlessCLI {
                 var gen = LetterGenerator(model: model, length: length, recentDays: AppSettings.recentDays)
                 gen.onStage = { note("  · \($0)") }
                 note("글 짓는 중 (\(persona.rawValue), \(model.rawValue), \(length.rawValue))…")
-                let r = try gen.generate(persona: persona, date: Date())
+                // --date YYYY-MM-DD 로 다른 날짜의 글을 지을 수 있다 (점검·연속성 시험용)
+                let genDate = value(after: "--date").flatMap { LetterStore.dateFormatter.date(from: $0) } ?? Date()
+                let r = try gen.generate(persona: persona, date: genDate)
                 note("분량 \(r.parsed.upperCount)/\(r.parsed.lowerCount)/\(r.parsed.totalCount)자, 한자 \(r.hanjaCount)자")
                 print(r.url.path)
             }

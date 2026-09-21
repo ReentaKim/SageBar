@@ -32,11 +32,14 @@ struct LetterGenerator {
         try? recent.write(to: Paths.recent, atomically: true, encoding: .utf8)
         let profile = try String(contentsOf: Paths.profile, encoding: .utf8)
         let topics = LetterStore.recentTopics()
+        let previous = LetterStore.previousEntry(before: dateStr)
+        let feedback = LetterStore.feedbackSummary()
 
         // 3) 짓기 (분량 미달이면 1회 재시도)
         onStage("\(persona.displayName)이(가) 글을 짓는 중")
         let prompt = PromptBuilder.letterPrompt(persona: persona, profile: profile, recent: recent,
-                                                recentTopics: topics, date: date, length: length, recentDays: recentDays)
+                                                recentTopics: topics, date: date, length: length, recentDays: recentDays,
+                                                previous: previous, feedback: feedback)
         var raw = try ClaudeCLI.run(prompt: prompt, model: model)
         try? raw.write(to: LetterStore.rawURL(for: dateStr), atomically: true, encoding: .utf8)
         var parsed = try LetterParser.parse(raw)
@@ -53,13 +56,15 @@ struct LetterGenerator {
             }
         }
 
-        let hanja = LetterParser.hanjaCount(parsed.upper + parsed.lower + parsed.closing + parsed.subtitle)
+        let hanja = LetterParser.hanjaCount(parsed.upper + parsed.lower + parsed.closing + parsed.subtitle + parsed.followup)
         if hanja > 0 { LetterStore.log("[\(id.rawValue)] 경고: 한자 \(hanja)자 포함") }
 
         // 4) 엮기
         onStage("두루마리에 옮기는 중")
         let url = try HTMLRenderer.render(letter: parsed, persona: persona, date: date, model: model)
-        LetterStore.appendHistory(HistoryEntry(date: dateStr, persona: id.rawValue, subtitle: parsed.subtitle))
+        LetterStore.appendHistory(HistoryEntry(date: dateStr, persona: id.rawValue, subtitle: parsed.subtitle,
+                                               actions: parsed.actions.isEmpty ? nil : parsed.actions))
+        if previous != nil { LetterStore.log("[\(id.rawValue)] 지난 조언 점검 \(parsed.followup.isEmpty ? "없음" : "\(LetterParser.charCount(parsed.followup))자"), 실천 항목 \(parsed.actions.count)개") }
         LetterStore.renderIndex()
         LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (\(parsed.upperCount)/\(parsed.lowerCount)/\(parsed.totalCount)자, 분량 \(parsed.meetsLength(length) ? "충족" : (parsed.nearlyMeetsLength(length) ? "근접" : "미달")))")
 

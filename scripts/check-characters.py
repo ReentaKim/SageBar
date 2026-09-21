@@ -42,6 +42,14 @@ SPEC = {
     "rod.png": (64, 256, 1, False),        # 두루마리 축 세로 타일 (16×64 원본, 투명 가능)
     "rodcap.png": (128, 128, 1, False),    # 축 끝 장식 (32×32 원본, 투명)
     "menubar-writing.png": (288, 72, 4, False),  # 메뉴바용 글 쓰는 실루엣 4프레임 (18×18 ×4 원본, 검정+알파)
+    "reaction-pleased.png": (256, 256, 1, False),  # 점검 상자 표정: 대체로 했다 (64×64)
+    "reaction-stern.png": (256, 256, 1, False),    # 점검 상자 표정: 대체로 안 했다 (64×64)
+}
+UI_DIR = os.path.join(ROOT, "Resources", "ui")
+UI_SPEC = {   # 인물 공통 UI 아이콘 (Resources/ui/)
+    "fb-sharp.png": (96, 96, 1, False),    # 찔렸다 아이콘 (24×24 원본)
+    "fb-dull.png": (96, 96, 1, False),     # 뻔했다 아이콘 (24×24 원본)
+    "fb-stamp.png": (128, 128, 1, False),  # 반응 남긴 뒤 찍히는 "새김" 도장 (32×32 원본)
 }
 OPAQUE = {"header.png", "backdrop.png"}   # 꽉 채운 그림이어야 하는 것
 SCALE = 4
@@ -74,12 +82,9 @@ def frame_has_content(im, frame_w, i):
     return alpha.getbbox() is not None
 
 
-def check_one(pid):
+def check_dir(d, spec):
     problems = []
-    d = os.path.join(CHAR_DIR, pid)
-    if not os.path.isdir(d):
-        return [f"폴더 없음: {d}"]
-    for name, (w, h, frames, required) in SPEC.items():
+    for name, (w, h, frames, required) in spec.items():
         p = os.path.join(d, name)
         if not os.path.exists(p):
             if required:
@@ -117,9 +122,16 @@ def check_one(pid):
     return problems
 
 
+def check_one(pid):
+    d = os.path.join(CHAR_DIR, pid)
+    if not os.path.isdir(d):
+        return [f"폴더 없음: {d}"]
+    return check_dir(d, SPEC)
+
+
 def contact_sheet(out_path):
     cell = 300
-    cols = ["portrait.png", "talking.png", "writing.png", "idle.png", "seal.png", "header.png", "backdrop.png", "rod.png", "rodcap.png", "menubar.png", "menubar-writing.png"]
+    cols = ["portrait.png", "talking.png", "writing.png", "idle.png", "seal.png", "header.png", "backdrop.png", "rod.png", "rodcap.png", "menubar.png", "menubar-writing.png", "reaction-pleased.png", "reaction-stern.png"]
     sheet = Image.new("RGBA", (cell * len(cols), cell * len(IDS)), (40, 40, 40, 255))
     for r, pid in enumerate(IDS):
         for c, name in enumerate(cols):
@@ -147,6 +159,15 @@ def main():
                 print(f"   - {p}")
         else:
             print(f"[{pid}] OK")
+    if os.path.isdir(UI_DIR):
+        probs = check_dir(UI_DIR, UI_SPEC)
+        if probs:
+            all_ok = False
+            print(f"[ui] 문제 {len(probs)}건")
+            for p in probs:
+                print(f"   - {p}")
+        else:
+            print("[ui] OK")
     if "--contact" in sys.argv:
         contact_sheet(os.path.join(ROOT, "docs", "screenshots", "characters-contact.png"))
     print("\n결과:", "전부 OK" if all_ok else "규격 미달 항목 있음")
