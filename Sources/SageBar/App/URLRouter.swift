@@ -21,7 +21,7 @@ enum URLRouter {
             NSApp.activate(ignoringOtherApps: true)
             NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         case "feedback":
-            guard let date = query("date"), let value = query("value"), ["sharp", "dull"].contains(value) else {
+            guard let date = query("date"), let value = query("value"), ["sharp", "dull", "miss"].contains(value) else {
                 LetterStore.log("피드백 URL 형식 오류"); return
             }
             let ok = LetterStore.setFeedback(date: date, value: value)

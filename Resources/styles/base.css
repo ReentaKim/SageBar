@@ -392,3 +392,22 @@ body {
 .sage-fb-icon { width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; image-rendering: pixelated; }
 .sage-fb-stamp { width: 28px; height: 28px; vertical-align: -9px; margin-right: 6px; image-rendering: pixelated; }
 @media (max-width: 640px) { .sage-reaction { display: none; } }
+
+/* ── 제목 위계 (0.6.0): 핵심 조언이 주제목, 편지 종류·날짜는 보조 ── */
+.sage-header { padding-bottom: 14px; margin-bottom: 22px; align-items: center; }
+.sage-title {
+  font-size: clamp(22px, 3.6vw, 32px);
+  letter-spacing: 0.01em; line-height: 1.35; word-break: keep-all;
+  margin: 2px 0 8px;
+}
+.sage-kicker { font-size: 13px; letter-spacing: .12em; margin: 0 0 2px; }
+.sage-dateline { margin: 0; font-size: 13px; color: var(--ink-soft); letter-spacing: .04em; }
+.sage-date-block, .sage-subtitle { display: none; }
+.sage-opening { margin-bottom: 22px; }
+
+/* ── 오늘 해볼 세 가지 ── */
+.sage-actions { margin: 18px 0 6px; padding: 14px 0 6px; border-top: 1px solid var(--gold); }
+.sage-actions-title { margin: 0 0 8px; font-size: 15px; font-weight: 800; color: var(--vermilion); letter-spacing: .04em; }
+.sage-actions ol { margin: 0; padding-left: 1.4em; }
+.sage-actions li { margin: 0 0 6px; font-size: 16px; line-height: 1.7; color: var(--ink); text-indent: 0; }
+.sage-actions li::marker { color: var(--vermilion); font-weight: 700; }
