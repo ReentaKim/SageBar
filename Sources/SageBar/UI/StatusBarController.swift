@@ -35,9 +35,17 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         guard let button = item?.button else { return }
         let engine = SageEngine.shared
         let symbol = engine.menuSymbol
-        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
-        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "SageBar")?
-            .withSymbolConfiguration(config) ?? NSImage(systemSymbolName: "scroll", accessibilityDescription: "SageBar")
+        let personaID = engine.todayPersona ?? engine.nextPersona()
+        let custom = Paths.resources.appendingPathComponent("characters/\(personaID.rawValue)/menubar.png")
+        let image: NSImage?
+        if let dot = NSImage(contentsOf: custom) {
+            dot.size = NSSize(width: 18, height: 18)   // 36×36 납품본을 18pt로 (Retina 2x)
+            image = dot
+        } else {
+            let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+            image = NSImage(systemSymbolName: symbol, accessibilityDescription: "SageBar")?
+                .withSymbolConfiguration(config) ?? NSImage(systemSymbolName: "scroll", accessibilityDescription: "SageBar")
+        }
         image?.isTemplate = true
         button.image = image
         button.appearsDisabled = engine.isGenerating

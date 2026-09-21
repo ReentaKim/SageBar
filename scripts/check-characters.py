@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+check-characters.py — Resources/characters/<id>/ 의 도트 캐릭터 자산이 규격에 맞는지 검사한다.
+
+    python3 scripts/check-characters.py            # 전체 검사
+    python3 scripts/check-characters.py --contact  # 검사 + docs/screenshots/characters-contact.png 생성
+
+규격 (납품 크기 = 원본의 4배, nearest neighbor):
+    portrait.png   256x256   1프레임
+    talking.png    768x256   3프레임(가로)
+    writing.png    512x128   4프레임(가로)
+    idle.png       256x128   2프레임(가로)
+    menubar.png    36x36     1프레임 (선택)
+공통: PNG RGBA, 배경 투명, 각 프레임에 실제 내용이 있음, 4배 확대가 정확할 것(2x2 픽셀 블록이 균일).
+"""
+import os
+import sys
+
+try:
+    from PIL import Image
+except ImportError:
+    print("Pillow가 필요합니다: python3 -m pip install pillow")
+    sys.exit(2)
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CHAR_DIR = os.path.join(ROOT, "Resources", "characters")
+IDS = ["zhuge", "socrates", "nietzsche", "sejong"]
+
+SPEC = {
+    # 파일: (납품 가로, 납품 세로, 프레임 수, 필수 여부)
+    "portrait.png": (256, 256, 1, True),
+    "talking.png": (768, 256, 3, True),
+    "writing.png": (512, 128, 4, True),
+    "idle.png": (256, 128, 2, True),
+    "menubar.png": (36, 36, 1, False),
+}
+SCALE = 4
+
+
+def check_scale_blocks(im, scale=SCALE):
+    """정확히 scale배 nearest 확대인지 — 각 scale×scale 블록이 단색인지 표본 검사."""
+    px = im.load()
+    w, h = im.size
+    bad = 0
+    total = 0
+    for by in range(0, h, scale * 7):        # 표본 추출 (전부 보면 느리다)
+        for bx in range(0, w, scale * 7):
+            base = px[bx, by]
+            total += 1
+            for dy in range(scale):
+                for dx in range(scale):
+                    if px[bx + dx, by + dy] != base:
+                        bad += 1
+                        break
+                else:
+                    continue
+                break
+    return bad, total
+
+
+def frame_has_content(im, frame_w, i):
+    frame = im.crop((i * frame_w, 0, (i + 1) * frame_w, im.size[1]))
+    alpha = frame.split()[-1]
+    return alpha.getbbox() is not None
+
+
+def check_one(pid):
+    problems = []
+    d = os.path.join(CHAR_DIR, pid)
+    if not os.path.isdir(d):
+        return [f"폴더 없음: {d}"]
+    for name, (w, h, frames, required) in SPEC.items():
+        p = os.path.join(d, name)
+        if not os.path.exists(p):
+            if required:
+                problems.append(f"{name}: 없음")
+            continue
+        try:
+            im = Image.open(p)
+        except Exception as e:  # noqa
+            problems.append(f"{name}: 열 수 없음 ({e})")
+            continue
+        if im.format != "PNG":
+            problems.append(f"{name}: PNG가 아님 ({im.format})")
+        if im.mode != "RGBA":
+            problems.append(f"{name}: RGBA가 아님 ({im.mode}) — 투명 배경 필요")
+            im = im.convert("RGBA")
+        if im.size != (w, h):
+            problems.append(f"{name}: 크기 {im.size[0]}x{im.size[1]} (기대 {w}x{h})")
+            continue
+        alpha = im.split()[-1]
+        # 네 모서리가 투명해야 배경이 뚫린 것
+        corners = [alpha.getpixel((0, 0)), alpha.getpixel((w - 1, 0)), alpha.getpixel((0, h - 1)), alpha.getpixel((w - 1, h - 1))]
+        if any(c > 8 for c in corners):
+            problems.append(f"{name}: 모서리가 불투명 — 배경이 투명하지 않음")
+        frame_w = w // frames
+        for i in range(frames):
+            if not frame_has_content(im, frame_w, i):
+                problems.append(f"{name}: {i + 1}번째 프레임이 비어 있음")
+        bad, total = check_scale_blocks(im)
+        if total and bad / total > 0.05:
+            problems.append(f"{name}: {SCALE}배 nearest 확대가 아닌 듯함 (블록 불일치 {bad}/{total}) — 보간 없이 확대할 것")
+    return problems
+
+
+def contact_sheet(out_path):
+    cell = 300
+    cols = ["portrait.png", "talking.png", "writing.png", "idle.png"]
+    sheet = Image.new("RGBA", (cell * len(cols), cell * len(IDS)), (40, 40, 40, 255))
+    for r, pid in enumerate(IDS):
+        for c, name in enumerate(cols):
+            p = os.path.join(CHAR_DIR, pid, name)
+            if not os.path.exists(p):
+                continue
+            im = Image.open(p).convert("RGBA")
+            im.thumbnail((cell - 20, cell - 20), Image.NEAREST)
+            x = c * cell + (cell - im.size[0]) // 2
+            y = r * cell + (cell - im.size[1]) // 2
+            sheet.alpha_composite(im, (x, y))
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    sheet.save(out_path)
+    print(f"모아보기 저장: {out_path}")
+
+
+def main():
+    all_ok = True
+    for pid in IDS:
+        probs = check_one(pid)
+        if probs:
+            all_ok = False
+            print(f"[{pid}] 문제 {len(probs)}건")
+            for p in probs:
+                print(f"   - {p}")
+        else:
+            print(f"[{pid}] OK")
+    if "--contact" in sys.argv:
+        contact_sheet(os.path.join(ROOT, "docs", "screenshots", "characters-contact.png"))
+    print("\n결과:", "전부 OK" if all_ok else "규격 미달 항목 있음")
+    sys.exit(0 if all_ok else 1)
+
+
+if __name__ == "__main__":
+    main()

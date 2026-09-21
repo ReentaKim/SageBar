@@ -115,7 +115,7 @@ enum LetterStore {
     // MARK: 자산 동기화 — 스타일·폰트·인장을 데이터 폴더로 복사 (편지가 앱 위치와 무관하게 열리도록)
     static func syncAssets() {
         let fm = FileManager.default
-        for sub in ["styles", "fonts", "seals"] {
+        for sub in ["styles", "fonts", "seals", "characters"] {
             let src = Paths.resources.appendingPathComponent(sub)
             let dst = Paths.assets.appendingPathComponent(sub)
             guard fm.fileExists(atPath: src.path) else { continue }
@@ -152,7 +152,8 @@ enum LetterStore {
             rows = items.map { info in
                 let who = info.persona?.persona.displayName ?? ""
                 let name = info.persona?.persona.letterName ?? "조언"
-                return "<li><a href=\"\(info.date).html\">\(info.date)</a><span class=\"sub\">\(HTMLEscape.escape(info.subtitle))</span><span class=\"who\">\(who) · \(name)</span></li>"
+                let thumb = info.persona.map { HTMLRenderer.portraitThumbHTML($0.persona) } ?? ""
+                return "<li>\(thumb)<a href=\"\(info.date).html\">\(info.date)</a><span class=\"sub\">\(HTMLEscape.escape(info.subtitle))</span><span class=\"who\">\(who) · \(name)</span></li>"
             }.joined(separator: "\n")
         }
         try? tpl.replacingOccurrences(of: "{{ROWS}}", with: rows)
