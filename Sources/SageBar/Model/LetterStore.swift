@@ -47,7 +47,7 @@ struct HistoryEntry: Codable {
     let persona: String
     let subtitle: String
     var actions: [String]? = nil     // 그날 권한 실천 항목 (다음 날 점검 근거)
-    var feedback: String? = nil      // "sharp"(찔렸다) / "dull"(뻔했다)
+    var feedback: String? = nil      // "sharp"(찔렸다) / "dull"(뻔했다) / "miss"(내 얘기와 달랐다)
 }
 
 enum LetterStore {
@@ -127,26 +127,31 @@ enum LetterStore {
     }
 
     static func feedbackLabel(_ value: String?) -> String? {
-        switch value { case "sharp": return "찔렸다"; case "dull": return "뻔했다"; default: return nil }
+        switch value { case "sharp": return "찔렸다"; case "dull": return "뻔했다"; case "miss": return "내 얘기와 달랐다"; default: return nil }
     }
 
     /// 프롬프트용 "독자의 반응" 요약 — 최근 10편의 반응과 인물별 집계
     static func feedbackSummary(limit: Int = 10) -> String {
         let rated = history().filter { $0.feedback != nil }
         guard !rated.isEmpty else { return "" }
-        var byPersona: [String: (sharp: Int, dull: Int)] = [:]
+        var byPersona: [String: (sharp: Int, dull: Int, miss: Int)] = [:]
         for r in rated {
-            var c = byPersona[r.persona] ?? (0, 0)
-            if r.feedback == "sharp" { c.sharp += 1 } else { c.dull += 1 }
+            var c = byPersona[r.persona] ?? (0, 0, 0)
+            switch r.feedback { case "sharp": c.sharp += 1; case "dull": c.dull += 1; default: c.miss += 1 }
             byPersona[r.persona] = c
         }
         var out = "인물별 집계: " + byPersona.map { k, v in
-            "\(PersonaID(rawValue: k)?.persona.displayName ?? k) 찔렸다 \(v.sharp) · 뻔했다 \(v.dull)"
+            "\(PersonaID(rawValue: k)?.persona.displayName ?? k) 찔렸다 \(v.sharp) · 뻔했다 \(v.dull) · 달랐다 \(v.miss)"
         }.joined(separator: " / ")
         out += "\n최근 반응:\n" + rated.suffix(limit).map {
             "- \($0.date) \(PersonaID(rawValue: $0.persona)?.persona.displayName ?? $0.persona) 「\($0.subtitle)」 → \(feedbackLabel($0.feedback) ?? "")"
         }.joined(separator: "\n")
         return out
+    }
+
+    /// 최근 N편 가운데 "내 얘기와 달랐다" 반응 수 — 2 이상이면 인물지를 다시 짓는다
+    static func recentMissCount(last n: Int = 7) -> Int {
+        history().suffix(n).filter { $0.feedback == "miss" }.count
     }
 
     static func lastPersona() -> PersonaID? {

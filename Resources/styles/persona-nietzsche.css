@@ -8,7 +8,8 @@
 .persona-nietzsche .sage-paper{background-image:radial-gradient(ellipse at top,#231f1d 0%,var(--hanji) 55%,var(--hanji-edge) 100%);box-shadow:0 10px 40px rgba(0,0,0,.9),inset 0 0 0 1px rgba(201,162,74,.35);}
 .persona-nietzsche .sage-header{border-bottom:1px solid var(--gold);}
 .persona-nietzsche .sage-kicker{margin:0 0 4px;font-size:13px;letter-spacing:.35em;color:var(--gold);}
-.persona-nietzsche .sage-title{font-size:clamp(34px,7vw,52px);letter-spacing:.05em;color:var(--gold);}
+.persona-nietzsche .sage-title{font-size:clamp(24px,4vw,34px);letter-spacing:.02em;color:var(--gold);}
+.persona-nietzsche .sage-dateline{color:var(--gold);}
 .persona-nietzsche .sage-subtitle{color:var(--ink);font-style:italic;}
 .persona-nietzsche .sage-date-block{writing-mode:horizontal-tb;text-align:right;color:var(--gold);}
 .persona-nietzsche .sage-section-title{color:var(--gold);}

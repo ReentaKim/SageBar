@@ -68,8 +68,10 @@ struct LetterGenerator {
         LetterStore.renderIndex()
         LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (\(parsed.upperCount)/\(parsed.lowerCount)/\(parsed.totalCount)자, 분량 \(parsed.meetsLength(length) ? "충족" : (parsed.nearlyMeetsLength(length) ? "근접" : "미달")))")
 
-        // 5) 인물지가 오래됐으면 뒤에서 조용히 갱신
-        if ProfileBuilder.isStale {
+        // 5) 인물지가 오래됐거나, 최근 "내 얘기와 달랐다" 반응이 2회 이상이면 뒤에서 조용히 다시 짓는다
+        let missCount = LetterStore.recentMissCount()
+        if ProfileBuilder.isStale || missCount >= 2 {
+            if missCount >= 2 { LetterStore.log("[profile] '달랐다' 반응 \(missCount)회 — 인물지 재작성") }
             let m = model
             DispatchQueue.global(qos: .background).async {
                 do { try ProfileBuilder.build(model: m) } catch { LetterStore.log("[profile] 갱신 실패: \(error.localizedDescription)") }

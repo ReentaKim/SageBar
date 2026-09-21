@@ -64,6 +64,7 @@ enum HTMLRenderer {
             "{{BACKDROP_CSS}}": backdropCSS(persona),
             "{{FOLLOWUP_HTML}}": followupHTML(letter, persona: persona),
             "{{FEEDBACK_HTML}}": feedbackHTML(date: dateStr),
+            "{{ACTIONS_HTML}}": actionsHTML(letter, persona: persona),
         ]
         var html = template
         for (k, v) in replacements { html = html.replacingOccurrences(of: k, with: v) }
@@ -72,6 +73,13 @@ enum HTMLRenderer {
     }
 
     // MARK: 지난 조언 점검 · 피드백
+
+    /// 오늘 권한 실천 항목 — 편지 끝에 번호 목록으로 (없으면 빈 문자열)
+    static func actionsHTML(_ letter: ParsedLetter, persona: Persona) -> String {
+        guard !letter.actions.isEmpty else { return "" }
+        let items = letter.actions.map { "<li>\(HTMLEscape.escape($0))</li>" }.joined()
+        return "<div class=\"sage-actions\"><p class=\"sage-actions-title\">\(HTMLEscape.escape(persona.actionsTitle))</p><ol>\(items)</ol></div>"
+    }
 
     static func hasUIFile(_ name: String) -> Bool {
         FileManager.default.fileExists(atPath: Paths.resources.appendingPathComponent("ui/\(name)").path)
@@ -115,8 +123,8 @@ enum HTMLRenderer {
         return """
         <div class="sage-feedback\(current.isEmpty ? "" : " done")" data-date="\(date)">
           <span class="sage-feedback-label">오늘 글은 어땠습니까</span>
-          \(btn("sharp", "찔렸다")) \(btn("dull", "뻔했다"))
-          <span class="sage-feedback-thanks">\(stamp)새겨 두겠습니다. 다음 글에 반영됩니다.</span>
+          \(btn("sharp", "찔렸다")) \(btn("dull", "뻔했다")) \(btn("miss", "내 얘기와 달랐다"))
+          <span class="sage-feedback-thanks">\(stamp)새겨 두었습니다. 다음 글을 지을 때 참고합니다.</span>
         </div>
         """
     }
@@ -165,7 +173,8 @@ enum HTMLRenderer {
         let base = "\(assetsPrefix)/characters/\(persona.id.rawValue)"
         var rules: [String] = []
         if hasCharacterFile(persona, "backdrop.png") {
-            rules.append("html,body{background-image:url('\(base)/backdrop.png');background-size:256px 256px;background-repeat:repeat;image-rendering:pixelated;}")
+            // 질감 위에 어두운 막을 한 겹 얹어 대비를 낮춘다 — 시선이 종이(본문)에 머물게
+            rules.append("html,body{background-image:linear-gradient(rgba(0,0,0,.34),rgba(0,0,0,.34)),url('\(base)/backdrop.png');background-size:auto,256px 256px;background-repeat:repeat;image-rendering:pixelated;}")
         }
         if hasCharacterFile(persona, "rod.png") {
             rules.append(".sage-rod{background:url('\(base)/rod.png') repeat-y center top;background-size:100% auto;image-rendering:pixelated;border-radius:0;box-shadow:none;}")
