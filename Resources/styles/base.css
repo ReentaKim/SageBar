@@ -283,8 +283,8 @@ body {
 .sage-meta {
   text-align: center;
   font-size: 12px;
-  color: var(--hanji-edge);   /* 종이 밖 어두운 배경 위 */
-  opacity: 0.75;
+  color: rgba(255,255,255,.7);   /* 종이 밖 어두운 배경 위 — 테마 무관 */
+  opacity: 1;
   margin-top: 14px;
 }
 
@@ -369,7 +369,7 @@ body {
 /* ── 피드백 버튼 ── */
 .sage-feedback {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;
-  margin: 22px 14px 0; font-size: 14px; color: var(--hanji-edge);   /* 종이 밖(어두운 배경 위)에 놓이므로 밝은 글자 */
+  margin: 22px 14px 0; font-size: 14px; color: rgba(255,255,255,.78);   /* 종이 밖 배경은 밝은·어두운 모드 모두 어두우므로 테마 무관 밝은 글자 */
 }
 .sage-feedback-label { margin-right: 4px; }
 .sage-fb {

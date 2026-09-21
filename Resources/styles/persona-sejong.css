@@ -13,7 +13,7 @@
 .persona-sejong .sage-paper{border:6px double var(--gold);box-shadow:0 10px 34px var(--paper-shadow);}
 .persona-sejong .sage-header{border-bottom:3px double var(--gold);}
 .persona-sejong .sage-kicker{margin:0 0 4px;font-size:13px;letter-spacing:.3em;color:var(--vermilion);}
-.persona-sejong .sage-title{letter-spacing:.25em;}
+.persona-sejong .sage-title{letter-spacing:.03em;}
 .persona-sejong .sage-h3 .dot{color:var(--gold);}
 .persona-sejong .sage-quote{border-left-color:var(--gold);background:rgba(195,154,59,.1);}
 .persona-sejong .sage-closing{border-top-color:var(--vermilion);}
