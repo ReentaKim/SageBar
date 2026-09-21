@@ -3,8 +3,6 @@ import SwiftUI
 @main
 struct SageBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @ObservedObject private var engine = SageEngine.shared
-
     init() {
         AppSettings.registerDefaults()
         Paths.ensure()
@@ -12,14 +10,9 @@ struct SageBarApp: App {
         HeadlessCLI.runIfRequested()   // `SageBar --generate ...` 이면 여기서 끝난다
     }
 
+    // 메뉴바 아이콘은 AppKit NSStatusItem(StatusBarController)으로 만든다.
+    // SwiftUI MenuBarExtra는 일부 구성에서 아이콘이 나타나지 않는 문제가 있었다.
     var body: some Scene {
-        MenuBarExtra {
-            MenuContent()
-        } label: {
-            Image(systemName: engine.menuSymbol)
-        }
-        .menuBarExtraStyle(.menu)
-
         Settings {
             SettingsView()
         }
