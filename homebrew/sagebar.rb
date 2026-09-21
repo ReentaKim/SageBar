@@ -9,7 +9,7 @@ cask "sagebar" do
   desc "Zhuge Liang, Socrates, Nietzsche and King Sejong write you a morning letter from your Claude Code history"
   homepage "https://github.com/ReentaKim/SageBar"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "SageBar.app"
 
