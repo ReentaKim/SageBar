@@ -8,6 +8,9 @@ struct ParsedLetter {
     var closing: String
     var quoteKorean: String
     var quoteSource: String
+    var followup: String = ""        // 지난 조언 점검 (선택)
+    var followupMood: String = ""    // pleased(대체로 했다) / stern(대체로 안 했다) / neutral
+    var actions: [String] = []       // 오늘 권한 실천 항목 (선택)
 
     var upperCount: Int { LetterParser.charCount(upper) }
     var lowerCount: Int { LetterParser.charCount(lower) }
@@ -63,12 +66,24 @@ enum LetterParser {
         // 코드블록 울타리가 섞여 오면 벗긴다
         let text = raw.replacingOccurrences(of: "```", with: "")
         let subtitle = firstMatch("^SUBTITLE:\\s*(.+)$", in: text, options: .anchorsMatchLines) ?? ""
+        let followupRaw = section("FOLLOWUP", next: ["UPPER"], in: text)
+        let followupMood = firstMatch("^FOLLOWUP_MOOD:\\s*(\\w+)", in: followupRaw, options: .anchorsMatchLines)?.lowercased() ?? ""
+        let followup = followupRaw.replacingOccurrences(of: "(?m)^FOLLOWUP_MOOD:.*$", with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let upper = section("UPPER", next: ["LOWER", "CLOSING"], in: text)
         let lower = section("LOWER", next: ["CLOSING"], in: text)
-        let closingBlock = section("CLOSING", next: [], in: text)
+        let hasActions = text.contains("---ACTIONS---")
+        let tail = section("CLOSING", next: [], in: text)            // CLOSING 이후 전부 (인용구가 어디 있든 찾기 위해)
+        let closingBlock = hasActions ? section("CLOSING", next: ["ACTIONS"], in: text) : tail
+        let actionsBlock = hasActions ? section("ACTIONS", next: [], in: text) : ""
+        let actions: [String] = actionsBlock.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .map { $0.replacingOccurrences(of: "^([-•*]|\\d+[.)])\\s*", with: "", options: .regularExpression) }
+            .filter { !$0.isEmpty && !$0.hasPrefix("QUOTE_") && !$0.hasPrefix("(") }
+            .prefix(3).map { String($0) }
 
-        let quoteKorean = firstMatch("^QUOTE_KOREAN:\\s*(.+)$", in: closingBlock, options: .anchorsMatchLines) ?? ""
-        let quoteSource = firstMatch("^QUOTE_SOURCE:\\s*(.+)$", in: closingBlock, options: .anchorsMatchLines) ?? ""
+        let quoteKorean = firstMatch("^QUOTE_KOREAN:\\s*(.+)$", in: tail, options: .anchorsMatchLines) ?? ""
+        let quoteSource = firstMatch("^QUOTE_SOURCE:\\s*(.+)$", in: tail, options: .anchorsMatchLines) ?? ""
         var closing = closingBlock
         for key in ["QUOTE_KOREAN", "QUOTE_SOURCE"] {
             closing = closing.replacingOccurrences(of: "(?m)^\(key):.*$", with: "", options: .regularExpression)
@@ -79,7 +94,8 @@ enum LetterParser {
             throw ParseError(message: "구획 표시(---UPPER---/---LOWER---)를 찾지 못했습니다.")
         }
         return ParsedLetter(subtitle: subtitle, upper: upper, lower: lower, closing: closing,
-                            quoteKorean: quoteKorean, quoteSource: quoteSource)
+                            quoteKorean: quoteKorean, quoteSource: quoteSource,
+                            followup: followup, followupMood: followupMood, actions: actions)
     }
 
     /// 이스케이프된 텍스트 안의 **강조**를 <strong>으로

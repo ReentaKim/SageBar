@@ -151,7 +151,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             return ("오늘은 붓을 놓았습니다", String(msg.prefix(80)))
         case .idle:
             if let p = engine.todayPersona {
-                let sub = LetterStore.history().last { $0.date == LetterStore.dateString() }?.subtitle ?? ""
+                let entry = LetterStore.history().last { $0.date == LetterStore.dateString() }
+                var sub = entry?.subtitle ?? ""
+                if let fb = LetterStore.feedbackLabel(entry?.feedback) { sub += (sub.isEmpty ? "" : " · ") + "반응: \(fb)" }
                 return ("오늘의 \(p.persona.letterName) — \(p.persona.displayName)", sub)
             } else if onboarded {
                 return ("오늘의 조언이 아직 없습니다", "다음 차례: \(engine.nextPersona().persona.displayName)")

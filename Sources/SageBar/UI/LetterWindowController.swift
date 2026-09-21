@@ -80,6 +80,11 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
     // 편지 안의 링크(지난 글, 목록)는 창 안에서, 외부 링크는 브라우저로
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        if let url = navigationAction.request.url, url.scheme == "sagebar" {
+            URLRouter.handle(url)          // 피드백 버튼 등 — 창 안에서 바로 처리
+            decisionHandler(.cancel)
+            return
+        }
         if let url = navigationAction.request.url, !url.isFileURL, navigationAction.navigationType == .linkActivated {
             NSWorkspace.shared.open(url)
             decisionHandler(.cancel)

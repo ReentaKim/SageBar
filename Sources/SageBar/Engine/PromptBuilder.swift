@@ -8,12 +8,36 @@ enum PromptBuilder {
         weekdayNames[Calendar.current.component(.weekday, from: date) - 1] + "요일"
     }
 
+    /// 지난 글의 권고를 프롬프트용 문단으로
+    static func previousSection(_ prev: HistoryEntry?) -> String {
+        guard let prev else { return "(없음 — 첫 글이므로 ---FOLLOWUP--- 구획은 쓰지 않는다)" }
+        let who = PersonaID(rawValue: prev.persona)?.persona.displayName ?? prev.persona
+        var s = "날짜: \(prev.date) / 지은 인물: \(who) / 부제: \(prev.subtitle)\n권한 것:\n"
+        if let acts = prev.actions, !acts.isEmpty {
+            s += acts.map { "- \($0)" }.joined(separator: "\n")
+        } else {
+            s += "(항목 기록이 없음 — 부제를 근거로 짧게만 점검한다)"
+        }
+        return s
+    }
+
     static func letterPrompt(persona: Persona, profile: String, recent: String, recentTopics: String,
-                             date: Date, length: LetterLength, recentDays: Int) -> String {
+                             date: Date, length: LetterLength, recentDays: Int,
+                             previous: HistoryEntry? = nil, feedback: String = "") -> String {
         let today = LetterStore.dateString(date)
         let upperTarget = length.minUpper + 200
         let lowerTarget = length.minLower + 200
         let total = length.minUpper + length.minLower
+        let followupFormat = previous == nil ? "" : """
+        ---FOLLOWUP---
+        (지난 조언 점검 — 위 "지난 글의 권고"에 적힌 항목 하나하나를 최근 발화 발췌와 대조해
+         "했다 / 안 했다 / 기록으로는 알 수 없다" 가운데 하나로 정직하게 판정하고 근거 발화를 인용한다.
+         지어내지 마라. 300~600자. 지난 글이 다른 인물의 것이면 "지난번 \(PersonaID(rawValue: previous!.persona)?.persona.displayName ?? "")이(가) …"처럼
+         그 인물을 밝힌다. 인물 어조를 유지하되, 잘한 것은 짧게 인정하고 안 한 것은 이유를 묻는다.
+         구획 첫 줄에 종합 판정을 "FOLLOWUP_MOOD: pleased" (대체로 했다) / "FOLLOWUP_MOOD: stern" (대체로 안 했다) /
+         "FOLLOWUP_MOOD: neutral" (알 수 없다·반반) 가운데 하나로 적고, 그 다음 줄부터 본문을 쓴다.)
+
+        """
         return """
         \(persona.voiceGuide)
 
@@ -31,6 +55,14 @@ enum PromptBuilder {
         ────────── 이미 다룬 주제 (최근 글들, 되풀이하지 말 것) ──────────
         \(recentTopics.isEmpty ? "(아직 없음 — 첫 글)" : recentTopics)
 
+        ────────── 지난 글의 권고 (오늘 점검할 것) ──────────
+        \(previousSection(previous))
+
+        ────────── 독자의 반응 (편지 아래 버튼으로 남긴 것) ──────────
+        \(feedback.isEmpty ? "(아직 없음)" : feedback)
+        - "뻔했다"가 많으면: 일반론을 줄이고 상대의 실제 발화 인용을 늘리며, 지난 글들과 다른 각도를 잡는다.
+        - "찔렸다"가 많으면: 그 직설의 수위와 구체성을 유지한다.
+
         ────────── 오늘 ──────────
         날짜: \(today) (\(weekdayKorean(date)))
 
@@ -47,7 +79,7 @@ enum PromptBuilder {
 
         ────────── 출력 형식 (반드시 이 형식을 정확히 지킬 것) ──────────
         SUBTITLE: (오늘 글 전체를 관통하는 한 줄 부제, 15자 내외, 순한글)
-        ---UPPER---
+        \(followupFormat)---UPPER---
         (\(persona.upperMark) "\(persona.upperTitle)" — AI 코딩 도구(Claude Code)를 어떻게 쓰면 좋을지,
          상대가 아직 서투른 부분을 콕 집어 조언한다. 반드시 \(upperTarget)자 이상.
          ### 로 시작하는 소제목을 3~4개 두고, 소제목은 한자 없이 완전한 한글 문구로 짓는다.
@@ -61,9 +93,13 @@ enum PromptBuilder {
         QUOTE_KOREAN: (오늘의 한 구절 — \(persona.quoteSourceHint) 가운데 실제로 있는 구절을
          한글 풀이로만 옮긴 한 문장. 원문은 절대 적지 마라.)
         QUOTE_SOURCE: (그 구절의 출처를 한글로만, 예: 논어 / 플라톤 변명 / 즐거운 학문 / 세종실록)
+        ---ACTIONS---
+        - (오늘 글에서 상대에게 권한 구체적 실천 항목 1 — 한 줄, 순한글, 내일 대화 기록으로 했는지 확인할 수 있는 행동)
+        - (항목 2)
+        - (항목 3)
 
         위 형식의 구획 표시(SUBTITLE:, ---UPPER--- 등)를 정확히 그대로 쓰고, 그 외의 안내문·설명은
-        절대 덧붙이지 마라. 전체 분량이 \(total)자를 넘어야 한다.
+        절대 덧붙이지 마라. 상편·하편 분량 합이 \(total)자를 넘어야 한다(점검 구획은 분량에 넣지 않는다).
         쓰기를 마쳤으면 본문 전체를 다시 훑어, 한자 글자가 단 하나라도 섞여 있지 않은지 스스로 검토하라.
         """
     }

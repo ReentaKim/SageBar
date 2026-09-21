@@ -16,6 +16,10 @@
 | `rod.png` | 64×256 | 1 (선택, 두루마리 축 세로 타일) |
 | `rodcap.png` | 128×128 | 1 (선택, 축 끝 장식 — 투명) |
 | `menubar-writing.png` | 288×72 | 4 (선택, 메뉴바 글 쓰는 실루엣 — 검정+알파) |
+| `reaction-pleased.png` | 256×256 | 1 (선택, 지난 조언 점검 상자 표정 — 흡족) |
+| `reaction-stern.png` | 256×256 | 1 (선택, 지난 조언 점검 상자 표정 — 꾸짖음) |
 
-자세한 규격과 제작 방법: [`docs/CODEX-REQUEST-characters.md`](../../docs/CODEX-REQUEST-characters.md), [`docs/CODEX-REQUEST-header-and-seals.md`](../../docs/CODEX-REQUEST-header-and-seals.md), [`docs/CODEX-REQUEST-backdrop.md`](../../docs/CODEX-REQUEST-backdrop.md)
+인물 공통 UI 아이콘은 `Resources/ui/`에 둡니다: `fb-sharp.png`(96×96), `fb-dull.png`(96×96), `fb-stamp.png`(128×128).
+
+자세한 규격과 제작 방법: [`docs/CODEX-REQUEST-characters.md`](../../docs/CODEX-REQUEST-characters.md), [`docs/CODEX-REQUEST-header-and-seals.md`](../../docs/CODEX-REQUEST-header-and-seals.md), [`docs/CODEX-REQUEST-backdrop.md`](../../docs/CODEX-REQUEST-backdrop.md), [`docs/CODEX-REQUEST-reactions.md`](../../docs/CODEX-REQUEST-reactions.md)
 검증: `python3 scripts/check-characters.py --contact`

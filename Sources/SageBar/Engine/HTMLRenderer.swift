@@ -62,11 +62,63 @@ enum HTMLRenderer {
             "{{AVATAR_HTML}}": hasBanner ? "" : avatarHTML(persona),   // 배너가 있으면 캐릭터는 배너 위에
             "{{BANNER_HTML}}": bannerHTML(persona),
             "{{BACKDROP_CSS}}": backdropCSS(persona),
+            "{{FOLLOWUP_HTML}}": followupHTML(letter, persona: persona),
+            "{{FEEDBACK_HTML}}": feedbackHTML(date: dateStr),
         ]
         var html = template
         for (k, v) in replacements { html = html.replacingOccurrences(of: k, with: v) }
         try html.write(to: outURL, atomically: true, encoding: .utf8)
         return outURL
+    }
+
+    // MARK: 지난 조언 점검 · 피드백
+
+    static func hasUIFile(_ name: String) -> Bool {
+        FileManager.default.fileExists(atPath: Paths.resources.appendingPathComponent("ui/\(name)").path)
+    }
+
+    static func followupHTML(_ letter: ParsedLetter, persona: Persona) -> String {
+        guard !letter.followup.isEmpty else { return "" }
+        // 판정에 따라 캐릭터 표정 (reaction-pleased / reaction-stern / 없으면 portrait)
+        let moodFile: String = {
+            switch letter.followupMood {
+            case "pleased": return "reaction-pleased.png"
+            case "stern": return "reaction-stern.png"
+            default: return "portrait.png"
+            }
+        }()
+        var reaction = ""
+        if hasCharacterFile(persona, moodFile) {
+            reaction = "<img class=\"sage-reaction\" src=\"../assets/characters/\(persona.id.rawValue)/\(moodFile)\" alt=\"\">"
+        } else if hasCharacterFile(persona, "portrait.png") {
+            reaction = "<img class=\"sage-reaction\" src=\"../assets/characters/\(persona.id.rawValue)/portrait.png\" alt=\"\">"
+        }
+        return """
+        <section class="sage-followup mood-\(letter.followupMood.isEmpty ? "neutral" : letter.followupMood)">
+          \(reaction)
+          <div class="sage-followup-body">
+            <h2 class="sage-section-title"><span class="mark">\(HTMLEscape.escape(persona.followupMark))</span> \(HTMLEscape.escape(persona.followupTitle))</h2>
+            \(LetterParser.paragraphsToHTML(letter.followup))
+          </div>
+        </section>
+        """
+    }
+
+    /// "찔렸다 / 뻔했다" 버튼. 링크는 sagebar:// 스킴이라 앱 창 안에서도, 브라우저에서 열어도 앱이 받는다.
+    static func feedbackHTML(date: String) -> String {
+        let current = LetterStore.history().first { $0.date == date }?.feedback ?? ""
+        func btn(_ v: String, _ label: String) -> String {
+            let icon = hasUIFile("fb-\(v).png") ? "<img class=\"sage-fb-icon\" src=\"../assets/ui/fb-\(v).png\" alt=\"\">" : ""
+            return "<a class=\"sage-fb\(current == v ? " is-on" : "")\" data-v=\"\(v)\" href=\"sagebar://feedback?date=\(date)&value=\(v)\">\(icon)\(label)</a>"
+        }
+        let stamp = hasUIFile("fb-stamp.png") ? "<img class=\"sage-fb-stamp\" src=\"../assets/ui/fb-stamp.png\" alt=\"\">" : ""
+        return """
+        <div class="sage-feedback\(current.isEmpty ? "" : " done")" data-date="\(date)">
+          <span class="sage-feedback-label">오늘 글은 어땠습니까</span>
+          \(btn("sharp", "찔렸다")) \(btn("dull", "뻔했다"))
+          <span class="sage-feedback-thanks">\(stamp)새겨 두겠습니다. 다음 글에 반영됩니다.</span>
+        </div>
+        """
     }
 
     // MARK: 도트 캐릭터 (Resources/characters/<id>/ 에 파일이 있을 때만 — 없으면 빈 문자열로 폴백)
