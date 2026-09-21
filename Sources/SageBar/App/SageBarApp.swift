@@ -47,10 +47,11 @@ enum HeadlessCLI {
                 let dateStr = value(after: "--date") ?? LetterStore.dateString()
                 let raw = try String(contentsOf: LetterStore.rawURL(for: dateStr), encoding: .utf8)
                 let parsed = try LetterParser.parse(raw)
-                let url = try HTMLRenderer.render(letter: parsed, persona: pid.persona, date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(), model: model)
+                // 오늘자 파일을 건드리지 않도록 별도 이름으로 바로 쓴다
                 let preview = Paths.letters.appendingPathComponent("preview-\(pid.rawValue).html")
-                try? FileManager.default.removeItem(at: preview)
-                try FileManager.default.moveItem(at: url, to: preview)
+                _ = try HTMLRenderer.render(letter: parsed, persona: pid.persona,
+                                            date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(),
+                                            model: model, outputURL: preview)
                 print(preview.path)
                 exit(0)
             }

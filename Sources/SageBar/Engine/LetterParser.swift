@@ -16,6 +16,12 @@ struct ParsedLetter {
     func meetsLength(_ length: LetterLength) -> Bool {
         upperCount >= length.minUpper && lowerCount >= length.minLower
     }
+
+    /// 기준의 75% 이상이면 "거의 충족" — 이때는 3분 넘게 걸리는 재시도를 하지 않는다
+    /// (격언체인 니체처럼 문체상 짧게 나오는 인물이 있다)
+    func nearlyMeetsLength(_ length: LetterLength) -> Bool {
+        Double(upperCount) >= Double(length.minUpper) * 0.75 && Double(lowerCount) >= Double(length.minLower) * 0.75
+    }
 }
 
 enum LetterParser {
