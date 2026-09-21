@@ -38,7 +38,12 @@ SPEC = {
     "menubar.png": (36, 36, 1, False),
     "header.png": (960, 320, 1, False),    # 편지 머리 배경 그림 (240×80 원본)
     "seal.png": (256, 256, 1, False),      # 도트 인장 (64×64 원본)
+    "backdrop.png": (256, 256, 1, False),  # 종이 뒤 배경 타일 (64×64 원본, 불투명, 이어붙임 가능)
+    "rod.png": (64, 256, 1, False),        # 두루마리 축 세로 타일 (16×64 원본, 투명 가능)
+    "rodcap.png": (128, 128, 1, False),    # 축 끝 장식 (32×32 원본, 투명)
+    "menubar-writing.png": (288, 72, 4, False),  # 메뉴바용 글 쓰는 실루엣 4프레임 (18×18 ×4 원본, 검정+알파)
 }
+OPAQUE = {"header.png", "backdrop.png"}   # 꽉 채운 그림이어야 하는 것
 SCALE = 4
 
 
@@ -95,7 +100,7 @@ def check_one(pid):
             continue
         alpha = im.split()[-1]
         corners = [alpha.getpixel((0, 0)), alpha.getpixel((w - 1, 0)), alpha.getpixel((0, h - 1)), alpha.getpixel((w - 1, h - 1))]
-        if name == "header.png":
+        if name in OPAQUE:
             # 배경 그림은 꽉 채운 장면이어야 한다
             if any(c < 250 for c in corners):
                 problems.append(f"{name}: 모서리가 투명 — 배경 그림은 불투명하게 꽉 채울 것")
@@ -114,7 +119,7 @@ def check_one(pid):
 
 def contact_sheet(out_path):
     cell = 300
-    cols = ["portrait.png", "talking.png", "writing.png", "idle.png", "seal.png", "header.png"]
+    cols = ["portrait.png", "talking.png", "writing.png", "idle.png", "seal.png", "header.png", "backdrop.png", "rod.png", "rodcap.png", "menubar.png", "menubar-writing.png"]
     sheet = Image.new("RGBA", (cell * len(cols), cell * len(IDS)), (40, 40, 40, 255))
     for r, pid in enumerate(IDS):
         for c, name in enumerate(cols):
