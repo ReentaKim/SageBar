@@ -42,6 +42,7 @@ body { display:block; background:#1a1512; padding:20px 12px 40px; }
     repeating-linear-gradient(180deg, #d8c7a0 0 22%, #a5895d 22% 26%, #d8c7a0 26% 48%, #a5895d 48% 52%, #d8c7a0 52% 74%, #a5895d 74% 78%, #d8c7a0 78% 100%);
     border: .3cqw solid #3a2c1e; border-radius: .6cqw; }
 .bundle.open .art { background: #ecdcb8; border-color: var(--vermilion, #9b2226); }
+.has-art .bundle { bottom: -0.6cqw; }   /* 배경 그림의 선반 판 위에 놓이게 */
 .has-art .bundle .art { border:0; border-radius:0; background: url('../assets/ui/desk/bundle.png') center / 100% 100% no-repeat; }
 .has-art .bundle.open .art { background-image: url('../assets/ui/desk/bundle-open.png'); }
 .bundle:hover { transform: translateY(-4%); }
@@ -109,7 +110,7 @@ body { display:block; background:#1a1512; padding:20px 12px 40px; }
 
 /* 장부 · 메뉴 패널 */
 .panel { left: 70%; width: 28.3%; background: #f3ecd9; border: .35cqw solid #b08d3e; border-radius: .8cqw; box-shadow: 0 .6cqw 1.2cqw rgba(0,0,0,.45); padding: 1.2cqw 1.4cqw; color:#1c1917; }
-.has-art .panel { background: none; border:0; box-shadow:none; }
+.has-art .panel { background: none; border:0; box-shadow:none; padding: 2.6cqw 2.4cqw 2cqw; }   /* 그림 틀은 테두리가 두꺼워 안쪽 여백을 더 준다 */
 .ledger { top: 4%; height: 48%; }
 .has-art .ledger { background: url('../assets/ui/desk/ledger.png') center / 100% 100% no-repeat; }
 .menu { top: 56%; height: 40%; }
