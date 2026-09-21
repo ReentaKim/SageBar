@@ -94,9 +94,13 @@ def check_one(pid):
             problems.append(f"{name}: 크기 {im.size[0]}x{im.size[1]} (기대 {w}x{h})")
             continue
         alpha = im.split()[-1]
-        # 네 모서리가 투명해야 배경이 뚫린 것
         corners = [alpha.getpixel((0, 0)), alpha.getpixel((w - 1, 0)), alpha.getpixel((0, h - 1)), alpha.getpixel((w - 1, h - 1))]
-        if any(c > 8 for c in corners):
+        if name == "header.png":
+            # 배경 그림은 꽉 채운 장면이어야 한다
+            if any(c < 250 for c in corners):
+                problems.append(f"{name}: 모서리가 투명 — 배경 그림은 불투명하게 꽉 채울 것")
+        elif any(c > 8 for c in corners):
+            # 나머지는 네 모서리가 투명해야 배경이 뚫린 것
             problems.append(f"{name}: 모서리가 불투명 — 배경이 투명하지 않음")
         frame_w = w // frames
         for i in range(frames):
