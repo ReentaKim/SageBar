@@ -3,6 +3,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         LetterStore.log("SageBar 시작 (v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"))")
+        StatusBarController.shared.install()
         if AppSettings.onboarded {
             SageEngine.shared.start()
         } else {
