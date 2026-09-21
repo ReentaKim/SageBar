@@ -1,0 +1,309 @@
+/* ────────────────────────────────────────────────
+   제갈량 상소문 — 한지 두루마리 스타일
+   ──────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Nanum Myeongjo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/NanumMyeongjo-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nanum Myeongjo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/NanumMyeongjo-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nanum Myeongjo';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../fonts/NanumMyeongjo-800.woff2') format('woff2');
+}
+
+:root {
+  --hanji: #f2e8d5;
+  --hanji-edge: #e6d8b8;
+  --ink: #1c1917;
+  --ink-soft: #3a332a;
+  --vermilion: #9b2226;
+  --vermilion-deep: #6e1418;
+  --rod: #4a3524;
+  --rod-light: #6b4f34;
+  --gold: #b08d3e;
+  --paper-shadow: rgba(28, 25, 23, 0.28);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hanji: #17130f;
+    --hanji-edge: #0f0c09;
+    --ink: #e9dfc7;
+    --ink-soft: #cabb96;
+    --vermilion: #c23b3f;
+    --vermilion-deep: #8a2a2e;
+    --rod: #2a1e14;
+    --rod-light: #3d2c1c;
+    --gold: #cdaa5e;
+    --paper-shadow: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --hanji: #17130f;
+  --hanji-edge: #0f0c09;
+  --ink: #e9dfc7;
+  --ink-soft: #cabb96;
+  --vermilion: #c23b3f;
+  --vermilion-deep: #8a2a2e;
+  --rod: #2a1e14;
+  --rod-light: #3d2c1c;
+  --gold: #cdaa5e;
+  --paper-shadow: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--rod);
+}
+
+body {
+  font-family: 'Nanum Myeongjo', 'AppleMyungjo', 'Noto Serif KR', serif;
+  color: var(--ink);
+  padding: 28px 14px 48px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.sage-scroll-wrap {
+  width: 100%;
+  max-width: 760px;
+  position: relative;
+}
+
+/* 두루마리 축 — 좌우 나무 봉 */
+.sage-rod {
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  width: 18px;
+  background: linear-gradient(90deg, var(--rod) 0%, var(--rod-light) 45%, var(--rod) 100%);
+  border-radius: 9px;
+  box-shadow: 0 0 12px var(--paper-shadow);
+  z-index: 3;
+}
+.sage-rod::before, .sage-rod::after {
+  content: "";
+  position: absolute;
+  left: -5px; right: -5px;
+  height: 22px;
+  background: radial-gradient(circle, var(--gold) 0%, var(--rod-light) 70%);
+  border-radius: 50%;
+}
+.sage-rod::before { top: -14px; }
+.sage-rod::after { bottom: -14px; }
+.sage-rod-left { left: -9px; }
+.sage-rod-right { right: -9px; }
+
+.sage-paper {
+  position: relative;
+  background-color: var(--hanji);
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>"),
+    linear-gradient(180deg, var(--hanji) 0%, var(--hanji-edge) 100%);
+  box-shadow: 0 10px 34px var(--paper-shadow), inset 0 0 60px rgba(0,0,0,0.06);
+  padding: 46px 40px 34px;
+  margin: 0 14px;
+  transform-origin: top center;
+  animation: sage-unfurl 0.85s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes sage-unfurl {
+  from { transform: scaleY(0.05); opacity: 0.2; }
+  60%  { transform: scaleY(1.02); opacity: 1; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sage-paper { animation: none; }
+}
+
+.sage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 3px double var(--vermilion);
+  padding-bottom: 18px;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+
+.sage-title-block { flex: 1; min-width: 0; }
+
+.sage-title {
+  font-weight: 800;
+  font-size: clamp(30px, 6vw, 44px);
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.sage-subtitle {
+  font-size: 16px;
+  color: var(--vermilion);
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.sage-date-block {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.9;
+  letter-spacing: 0.06em;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.sage-opening {
+  font-size: 16px;
+  color: var(--ink-soft);
+  margin-bottom: 30px;
+  font-weight: 700;
+}
+
+.sage-body { font-size: 17px; line-height: 1.95; }
+
+.sage-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 40px 0 18px;
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.sage-section-title .mark {
+  color: var(--vermilion);
+  font-size: 15px;
+}
+
+.sage-h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 26px 0 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.sage-h3 .dot { color: var(--vermilion); font-size: 11px; }
+
+.sage-body p {
+  margin: 0 0 16px;
+  text-indent: 1em;
+}
+.sage-body strong, .sage-closing strong {
+  color: var(--vermilion);
+  font-weight: 700;
+}
+
+.sage-closing {
+  margin-top: 36px;
+  padding-top: 22px;
+  border-top: 1px solid var(--gold);
+  font-size: 16.5px;
+  line-height: 1.95;
+  color: var(--ink-soft);
+}
+.sage-closing p { text-indent: 1em; margin: 0 0 14px; }
+
+.sage-quote {
+  margin: 20px 0 8px;
+  padding: 16px 20px;
+  border-left: 3px solid var(--vermilion);
+  background: rgba(155, 34, 38, 0.06);
+  font-size: 15.5px;
+}
+.sage-quote .korean { font-weight: 700; color: var(--ink); display: block; margin-bottom: 4px; }
+.sage-quote .source { color: var(--ink-soft); font-size: 14px; }
+
+.sage-signoff {
+  text-align: right;
+  margin-top: 24px;
+  padding-right: 96px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sage-seal {
+  position: absolute;
+  right: 34px;
+  bottom: 60px;
+  width: 78px;
+  height: 78px;
+  opacity: 0.92;
+  pointer-events: none;
+}
+.sage-seal-svg { width: 100%; height: 100%; display: block; }
+
+.sage-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 26px 14px 0;
+}
+.sage-btn {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--hanji-edge);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  padding: 9px 18px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.sage-btn:hover { background: var(--vermilion); color: var(--hanji); border-color: var(--vermilion); }
+.sage-btn-disabled { opacity: 0.35; pointer-events: none; }
+
+.sage-meta {
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-soft);
+  opacity: 0.6;
+  margin-top: 14px;
+}
+
+@media (max-width: 640px) {
+  .sage-paper { padding: 34px 20px 26px; margin: 0 6px; }
+  .sage-header { flex-direction: column; }
+  .sage-date-block { writing-mode: horizontal-tb; text-align: left; }
+  .sage-rod { width: 10px; }
+  .sage-seal { width: 58px; height: 58px; right: 18px; bottom: 40px; }
+  .sage-body { font-size: 16px; }
+  .sage-signoff { padding-right: 70px; }
+}
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .sage-rod, .sage-controls, .sage-meta { display: none; }
+  .sage-paper { animation: none; box-shadow: none; margin: 0; }
+  .sage-scroll-wrap { max-width: 100%; }
+}
+
+/* 인물 이름 표시줄(제목 위 작은 글씨) — 인물별 CSS에서 세부 조정 */
+.sage-kicker { margin: 0 0 4px; font-size: 13px; letter-spacing: .25em; color: var(--ink-soft); }

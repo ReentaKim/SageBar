@@ -1,0 +1,7 @@
+.build/
+dist/
+*.dmg
+*.zip
+.DS_Store
+/SageBar.app
+docs/screenshots/*.tmp.png

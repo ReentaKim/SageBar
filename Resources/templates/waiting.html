@@ -1,0 +1,19 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="{{ASSETS}}/styles/base.css">
+<link rel="stylesheet" href="{{ASSETS}}/styles/persona-{{PERSONA_ID}}.css">
+<style>
+body{display:block;background:var(--hanji);color:var(--ink);text-align:center;padding:120px 24px;}
+.box{max-width:520px;margin:0 auto;line-height:1.9;}
+h1{color:var(--vermilion);letter-spacing:.1em;font-size:30px;margin:0 0 20px;}
+p{font-size:17px;margin:0 0 12px;}
+small{color:var(--ink-soft);font-size:13px;}
+.dots::after{content:"";animation:d 1.4s steps(4) infinite;}
+@keyframes d{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.err{color:var(--vermilion);font-size:13px;white-space:pre-wrap;text-align:left;background:rgba(0,0,0,.05);padding:12px;border-radius:8px;margin-top:20px;}
+</style></head><body><div class="box">
+<h1>{{TITLE}}</h1>
+<p>{{LINE}}<span class="{{DOTS_CLASS}}"></span></p>
+<p><small>{{HINT}}</small></p>
+{{EXTRA}}
+</div></body></html>

@@ -1,0 +1,21 @@
+/* 니체 — 검은 종이, 금박, 붉은 망치 */
+.persona-nietzsche{
+  --hanji:#151312; --hanji-edge:#0d0c0b; --ink:#ece4d4; --ink-soft:#b8ad98;
+  --vermilion:#c8322e; --vermilion-deep:#8a1f1c; --rod:#0a0909; --rod-light:#2a2422;
+  --gold:#c9a24a; --paper-shadow:rgba(0,0,0,.75); color-scheme:dark;
+}
+.persona-nietzsche .sage-rod{background:linear-gradient(90deg,#1a1615,#3a2f2a 45%,#1a1615);}
+.persona-nietzsche .sage-paper{background-image:radial-gradient(ellipse at top,#231f1d 0%,var(--hanji) 55%,var(--hanji-edge) 100%);box-shadow:0 10px 40px rgba(0,0,0,.9),inset 0 0 0 1px rgba(201,162,74,.35);}
+.persona-nietzsche .sage-header{border-bottom:1px solid var(--gold);}
+.persona-nietzsche .sage-kicker{margin:0 0 4px;font-size:13px;letter-spacing:.35em;color:var(--gold);}
+.persona-nietzsche .sage-title{font-size:clamp(34px,7vw,52px);letter-spacing:.05em;color:var(--gold);}
+.persona-nietzsche .sage-subtitle{color:var(--ink);font-style:italic;}
+.persona-nietzsche .sage-date-block{writing-mode:horizontal-tb;text-align:right;color:var(--gold);}
+.persona-nietzsche .sage-section-title{color:var(--gold);}
+.persona-nietzsche .sage-h3{color:var(--ink);}
+.persona-nietzsche .sage-h3 .dot{color:var(--vermilion);}
+.persona-nietzsche .sage-body p{text-indent:0;}
+.persona-nietzsche .sage-body strong{color:var(--gold);}
+.persona-nietzsche .sage-quote{border-left-color:var(--gold);background:rgba(201,162,74,.08);}
+.persona-nietzsche .sage-btn{background:transparent;color:var(--gold);border-color:var(--gold);}
+.persona-nietzsche .sage-btn:hover{background:var(--gold);color:var(--hanji);}

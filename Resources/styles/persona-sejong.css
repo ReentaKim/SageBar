@@ -1,0 +1,19 @@
+/* 세종대왕 — 어람용 청록 비단과 금박, 해례본 */
+.persona-sejong{
+  --hanji:#f3ecd9; --hanji-edge:#e8dfc6; --ink:#1b2430; --ink-soft:#3f4a57;
+  --vermilion:#1f6f6b; --vermilion-deep:#144d4a; --rod:#16413f; --rod-light:#246663;
+  --gold:#c39a3b; --paper-shadow:rgba(22,65,63,.3);
+}
+@media (prefers-color-scheme: dark){ .persona-sejong{
+  --hanji:#121a1a; --hanji-edge:#0b1111; --ink:#e7e1cf; --ink-soft:#b9b3a1;
+  --vermilion:#4fb3ad; --vermilion-deep:#2f7f7a; --rod:#0c2624; --rod-light:#164340;
+  --gold:#d4ad55; --paper-shadow:rgba(0,0,0,.6);
+}}
+.persona-sejong .sage-rod{background:linear-gradient(90deg,var(--rod) 0%,var(--gold) 50%,var(--rod) 100%);}
+.persona-sejong .sage-paper{border:6px double var(--gold);box-shadow:0 10px 34px var(--paper-shadow);}
+.persona-sejong .sage-header{border-bottom:3px double var(--gold);}
+.persona-sejong .sage-kicker{margin:0 0 4px;font-size:13px;letter-spacing:.3em;color:var(--vermilion);}
+.persona-sejong .sage-title{letter-spacing:.25em;}
+.persona-sejong .sage-h3 .dot{color:var(--gold);}
+.persona-sejong .sage-quote{border-left-color:var(--gold);background:rgba(195,154,59,.1);}
+.persona-sejong .sage-closing{border-top-color:var(--vermilion);}
