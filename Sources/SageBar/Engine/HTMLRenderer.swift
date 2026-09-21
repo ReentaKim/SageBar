@@ -28,7 +28,8 @@ enum HTMLRenderer {
         let dateStr = LetterStore.dateString(date)
         let outURL = outputURL ?? LetterStore.letterURL(for: dateStr)
         let year = Calendar.current.component(.year, from: date)
-        let seal = loadResource("seals/\(persona.id.rawValue).svg") ?? ""
+        let seal = sealHTML(persona)
+        let hasBanner = hasCharacterFile(persona, "header.png")
 
         let previous = LetterStore.listLetters().map(\.date).filter { $0 < dateStr }.first
         let prevLink = previous.map { "<a class=\"sage-btn\" href=\"\($0).html\">◀ 지난 글 보기</a>" }
@@ -58,7 +59,8 @@ enum HTMLRenderer {
             "{{LOWER_COUNT}}": formatNumber(letter.lowerCount),
             "{{TOTAL_COUNT}}": formatNumber(letter.totalCount),
             "{{MODEL}}": model.rawValue,
-            "{{AVATAR_HTML}}": avatarHTML(persona),
+            "{{AVATAR_HTML}}": hasBanner ? "" : avatarHTML(persona),   // 배너가 있으면 캐릭터는 배너 위에
+            "{{BANNER_HTML}}": bannerHTML(persona),
         ]
         var html = template
         for (k, v) in replacements { html = html.replacingOccurrences(of: k, with: v) }
@@ -88,6 +90,21 @@ enum HTMLRenderer {
         guard hasCharacterFile(persona, name) else { return "" }
         let cls = writing ? "sage-sprite sage-writing" : "sage-sprite sage-idle"
         return "<div class=\"\(cls)\" aria-hidden=\"true\" style=\"background-image:url('../assets/characters/\(persona.id.rawValue)/\(name)')\"></div>"
+    }
+
+    /// 편지 머리 배경 그림(header.png)이 있으면 배너 안에 캐릭터를 올린다. 없으면 빈 문자열.
+    static func bannerHTML(_ persona: Persona) -> String {
+        guard hasCharacterFile(persona, "header.png") else { return "" }
+        let base = "../assets/characters/\(persona.id.rawValue)"
+        return "<div class=\"sage-banner\" aria-hidden=\"true\" style=\"background-image:url('\(base)/header.png')\">\(avatarHTML(persona))</div>"
+    }
+
+    /// 도트 인장(seal.png)이 있으면 그것을, 없으면 SVG 인장을
+    static func sealHTML(_ persona: Persona) -> String {
+        if hasCharacterFile(persona, "seal.png") {
+            return "<img class=\"sage-seal-png\" src=\"../assets/characters/\(persona.id.rawValue)/seal.png\" alt=\"\">"
+        }
+        return loadResource("seals/\(persona.id.rawValue).svg") ?? ""
     }
 
     static func portraitThumbHTML(_ persona: Persona) -> String {

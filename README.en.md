@@ -46,6 +46,12 @@ No generic advice. The sage quotes you back to yourself: "you asked the same con
 <td width="25%" align="center"><b>King Sejong</b><br><sub>Royal edict</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="Resources/characters/zhuge/portrait.png" width="96" alt="Zhuge Liang"></td>
+<td align="center"><img src="Resources/characters/socrates/portrait.png" width="96" alt="Socrates"></td>
+<td align="center"><img src="Resources/characters/nietzsche/portrait.png" width="96" alt="Nietzsche"></td>
+<td align="center"><img src="Resources/characters/sejong/portrait.png" width="96" alt="King Sejong"></td>
+</tr>
+<tr>
 <td><img src="docs/screenshots/zhuge.png" alt="Zhuge Liang"></td>
 <td><img src="docs/screenshots/socrates.png" alt="Socrates"></td>
 <td><img src="docs/screenshots/nietzsche.png" alt="Nietzsche"></td>
@@ -58,6 +64,8 @@ No generic advice. The sage quotes you back to yourself: "you asked the same con
 <td valign="top">Royal teal silk. A wise king who is kind but <b>scolds laziness</b>, writes in plain words, and always checks on your sleep and your family.</td>
 </tr>
 </table>
+
+Each sage appears as a Koei-style pixel character: talking in the letter header, scribbling at a desk while the letter is being written.
 
 By default they **rotate daily**. In Settings you can pin one, randomize, or exclude any of them.
 
