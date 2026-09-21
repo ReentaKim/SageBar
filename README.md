@@ -44,6 +44,12 @@
 <td width="25%" align="center"><b>세종대왕</b><br><sub>윤음</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="Resources/characters/zhuge/portrait.png" width="96" alt="제갈량 초상"></td>
+<td align="center"><img src="Resources/characters/socrates/portrait.png" width="96" alt="소크라테스 초상"></td>
+<td align="center"><img src="Resources/characters/nietzsche/portrait.png" width="96" alt="니체 초상"></td>
+<td align="center"><img src="Resources/characters/sejong/portrait.png" width="96" alt="세종대왕 초상"></td>
+</tr>
+<tr>
 <td><img src="docs/screenshots/zhuge.png" alt="제갈량 상소문"></td>
 <td><img src="docs/screenshots/socrates.png" alt="소크라테스 대화편"></td>
 <td><img src="docs/screenshots/nietzsche.png" alt="니체 아포리즘"></td>
@@ -56,6 +62,8 @@
 <td valign="top">어람용 청록 비단. 어질되 게으름은 꾸짖는 <b>임금의 글</b>. 훈민정음의 뜻대로 쉬운 말로, 몸과 잠과 가족을 꼭 한 번 챙깁니다.</td>
 </tr>
 </table>
+
+네 현자는 삼국지 조조전풍 도트 캐릭터로 등장해 편지 머리에서 말을 걸고, 글을 짓는 동안에는 책상에서 붓을 놀립니다.
 
 기본은 **하루씩 돌아가며** 등장합니다. 설정에서 한 명만 고정하거나, 무작위로 바꾸거나, 마음에 안 드는 인물을 뺄 수 있습니다.
 

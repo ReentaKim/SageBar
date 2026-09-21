@@ -12,6 +12,8 @@ check-characters.py — Resources/characters/<id>/ 의 도트 캐릭터 자산�
     writing.png    512x128   4프레임(가로)
     idle.png       256x128   2프레임(가로)
     menubar.png    36x36     1프레임 (선택)
+    header.png     960x320   1프레임 (선택) — 편지 머리 배경
+    seal.png       256x256   1프레임 (선택) — 도트 인장
 공통: PNG RGBA, 배경 투명, 각 프레임에 실제 내용이 있음, 4배 확대가 정확할 것(2x2 픽셀 블록이 균일).
 """
 import os
@@ -34,6 +36,8 @@ SPEC = {
     "writing.png": (512, 128, 4, True),
     "idle.png": (256, 128, 2, True),
     "menubar.png": (36, 36, 1, False),
+    "header.png": (960, 320, 1, False),    # 편지 머리 배경 그림 (240×80 원본)
+    "seal.png": (256, 256, 1, False),      # 도트 인장 (64×64 원본)
 }
 SCALE = 4
 
@@ -106,7 +110,7 @@ def check_one(pid):
 
 def contact_sheet(out_path):
     cell = 300
-    cols = ["portrait.png", "talking.png", "writing.png", "idle.png"]
+    cols = ["portrait.png", "talking.png", "writing.png", "idle.png", "seal.png", "header.png"]
     sheet = Image.new("RGBA", (cell * len(cols), cell * len(IDS)), (40, 40, 40, 255))
     for r, pid in enumerate(IDS):
         for c, name in enumerate(cols):
