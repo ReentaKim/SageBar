@@ -24,7 +24,7 @@ struct SageBarApp: App {
 enum HeadlessCLI {
     static func runIfRequested() {
         let args = CommandLine.arguments
-        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") else { return }
+        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") else { return }
 
         func value(after flag: String) -> String? {
             guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -53,6 +53,21 @@ enum HeadlessCLI {
                                             date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(),
                                             model: model, outputURL: preview)
                 print(preview.path)
+                exit(0)
+            }
+            // --rerender [YYYY-MM-DD]: 보관된 원문(raw/)을 현재 템플릿·자산으로 다시 엮는다 (claude 호출 없음).
+            // 템플릿이나 캐릭터 그림이 바뀐 뒤 이미 지어진 편지에 새 모습을 입힐 때 쓴다.
+            if args.contains("--rerender") {
+                let dateStr = value(after: "--rerender").flatMap { $0.hasPrefix("20") ? $0 : nil } ?? LetterStore.dateString()
+                guard let pid = LetterStore.personaForDate(dateStr) else {
+                    note("\(dateStr)의 인물 기록이 없어 다시 엮을 수 없습니다."); exit(1)
+                }
+                let raw = try String(contentsOf: LetterStore.rawURL(for: dateStr), encoding: .utf8)
+                let parsed = try LetterParser.parse(raw)
+                let url = try HTMLRenderer.render(letter: parsed, persona: pid.persona,
+                                                  date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(), model: model)
+                LetterStore.renderIndex()
+                print(url.path)
                 exit(0)
             }
             if args.contains("--profile") || !ProfileBuilder.exists {
