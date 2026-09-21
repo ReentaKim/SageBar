@@ -307,3 +307,34 @@ body {
 
 /* 인물 이름 표시줄(제목 위 작은 글씨) — 인물별 CSS에서 세부 조정 */
 .sage-kicker { margin: 0 0 4px; font-size: 13px; letter-spacing: .25em; color: var(--ink-soft); }
+
+/* ── 도트 캐릭터 (Resources/characters/<id>/) ── */
+.sage-avatar {
+  width: 128px; height: 128px; flex-shrink: 0;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  filter: drop-shadow(0 4px 6px var(--paper-shadow));
+}
+.sage-avatar img { width: 128px; height: 128px; image-rendering: pixelated; display: block; }
+/* talking.png: 64×64 ×3 프레임(납품 768×256) → 128px 표시. 3프레임을 0.9초에 돌고 8번 반복 뒤 1번(입 닫힘)으로 */
+.sage-talk {
+  width: 128px; height: 128px;
+  background-repeat: no-repeat; background-size: 384px 128px; background-position: 0 0;
+  image-rendering: pixelated;
+  animation: sage-talk 0.9s steps(3) 8;
+}
+@keyframes sage-talk { from { background-position: 0 0; } to { background-position: -384px 0; } }
+
+/* 대기 화면용: writing.png 32×32 ×4 (512×128) / idle.png 32×32 ×2 (256×64) → 128px 표시 */
+.sage-sprite {
+  width: 128px; height: 128px; margin: 0 auto 18px;
+  background-repeat: no-repeat; background-position: 0 0; image-rendering: pixelated;
+}
+.sage-writing { background-size: 512px 128px; animation: sage-writing 0.8s steps(4) infinite; }
+@keyframes sage-writing { from { background-position: 0 0; } to { background-position: -512px 0; } }
+.sage-idle { background-size: 256px 128px; animation: sage-idle 1.2s steps(2) infinite; }
+@keyframes sage-idle { from { background-position: 0 0; } to { background-position: -256px 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sage-talk, .sage-writing, .sage-idle { animation: none; }
+}
+@media (max-width: 640px) { .sage-avatar { display: none; } }
