@@ -63,7 +63,8 @@ struct LetterGenerator {
         onStage("두루마리에 옮기는 중")
         let url = try HTMLRenderer.render(letter: parsed, persona: persona, date: date, model: model)
         LetterStore.appendHistory(HistoryEntry(date: dateStr, persona: id.rawValue, subtitle: parsed.subtitle,
-                                               actions: parsed.actions.isEmpty ? nil : parsed.actions))
+                                               actions: parsed.actions.isEmpty ? nil : parsed.actions,
+                                               mood: parsed.followupMood.isEmpty ? nil : parsed.followupMood))
         if previous != nil { LetterStore.log("[\(id.rawValue)] 지난 조언 점검 \(parsed.followup.isEmpty ? "없음" : "\(LetterParser.charCount(parsed.followup))자"), 실천 항목 \(parsed.actions.count)개") }
         LetterStore.renderIndex()
         LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (\(parsed.upperCount)/\(parsed.lowerCount)/\(parsed.totalCount)자, 분량 \(parsed.meetsLength(length) ? "충족" : (parsed.nearlyMeetsLength(length) ? "근접" : "미달")))")

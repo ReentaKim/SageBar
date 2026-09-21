@@ -116,7 +116,7 @@ A scroll icon appears in the menu bar and a setup window opens. It checks for th
 |---|---|
 | Show today's letter | Opens today's letter, generating it first if needed |
 | Write anew | Regenerate today with the next sage, or pick one |
-| All past letters | Archive with date, sage and subtitle |
+| All past letters | **The Sage's Study** — a desk scene: letters piled as scrolls, monthly bundles on a shelf, the four sages as a party, a ledger and a menu. Hover a scroll for the day's key advice, click to open. |
 | Settings › General | Show time, pre-build lead, length (short/normal/long), model (Opus/Sonnet), launch at login |
 | Settings › Sages | Rotate / pin one / random, which sages to include |
 | Settings › Advanced | `claude` path override, days of history to use, refresh profile now, open log |

@@ -48,6 +48,7 @@ struct HistoryEntry: Codable {
     let subtitle: String
     var actions: [String]? = nil     // 그날 권한 실천 항목 (다음 날 점검 근거)
     var feedback: String? = nil      // "sharp"(찔렸다) / "dull"(뻔했다) / "miss"(내 얘기와 달랐다)
+    var mood: String? = nil          // 지난 조언 점검 판정 pleased / stern / neutral
 }
 
 enum LetterStore {
@@ -192,23 +193,76 @@ enum LetterStore {
             }
     }
 
+    /// 지난 조언 모음 = 「현자의 서재」 장면 (templates/archive.html). 자산 없으면 CSS 폴백 장면.
     static func renderIndex() {
-        let tplURL = Paths.resources.appendingPathComponent("templates/index.html")
+        let seat = personaForDate(dateString()) ?? nextPersonaGuess()
+        renderArchive(seat: seat, generating: false)
+    }
+
+    /// 엔진 없이 순번을 어림잡을 때 (헤드리스·렌더 전용)
+    static func nextPersonaGuess() -> PersonaID {
+        let enabled = AppSettings.enabledPersonas
+        guard let last = lastPersona(), let i = enabled.firstIndex(of: last) else { return enabled.first ?? .zhuge }
+        return enabled[(i + 1) % enabled.count]
+    }
+
+    static func renderArchive(seat: PersonaID, generating: Bool) {
+        let tplURL = Paths.resources.appendingPathComponent("templates/archive.html")
         guard let tpl = try? String(contentsOf: tplURL, encoding: .utf8) else { return }
-        let items = listLetters()
-        let rows: String
-        if items.isEmpty {
-            rows = "<li class=\"empty\">아직 지은 글이 없습니다.</li>"
-        } else {
-            rows = items.map { info in
-                let who = info.persona?.persona.displayName ?? ""
-                let name = info.persona?.persona.letterName ?? "조언"
-                let thumb = info.persona.map { HTMLRenderer.portraitThumbHTML($0.persona) } ?? ""
-                return "<li>\(thumb)<a href=\"\(info.date).html\">\(info.date)</a><span class=\"sub\">\(HTMLEscape.escape(info.subtitle))</span><span class=\"who\">\(who) · \(name)</span></li>"
-            }.joined(separator: "\n")
+        let today = dateString()
+        let hist = Dictionary(uniqueKeysWithValues: history().map { ($0.date, $0) })
+        let items = listLetters().sorted { $0.date < $1.date }
+
+        // 장면 데이터
+        let data: [[String: Any]] = items.map { info in
+            let h = hist[info.date]
+            return ["date": info.date, "persona": info.persona?.rawValue ?? "zhuge", "subtitle": info.subtitle,
+                    "feedback": h?.feedback ?? "", "mood": h?.mood ?? ""]
         }
-        try? tpl.replacingOccurrences(of: "{{ROWS}}", with: rows)
-            .write(to: Paths.indexPage, atomically: true, encoding: .utf8)
+        // 집계
+        var perPersona: [String: [String: Int]] = [:]
+        var fb = ["sharp": 0, "dull": 0, "miss": 0]
+        var moodTotal = 0, moodPleased = 0
+        for info in items {
+            let pid = info.persona?.rawValue ?? "zhuge"
+            var c = perPersona[pid] ?? ["count": 0, "sharp": 0]
+            c["count", default: 0] += 1
+            let h = hist[info.date]
+            if h?.feedback == "sharp" { c["sharp", default: 0] += 1 }
+            if let f = h?.feedback, fb[f] != nil { fb[f, default: 0] += 1 }
+            if let m = h?.mood, ["pleased", "stern"].contains(m) { moodTotal += 1; if m == "pleased" { moodPleased += 1 } }
+            perPersona[pid] = c
+        }
+        // 연속 일수: 오늘(또는 어제)부터 거꾸로 이어진 날 수
+        let dates = Set(items.map(\.date))
+        var streak = 0
+        var cursor = dateFormatter.date(from: today) ?? Date()
+        if !dates.contains(today) { cursor = cursor.addingTimeInterval(-86400) }
+        while dates.contains(dateString(cursor)) { streak += 1; cursor = cursor.addingTimeInterval(-86400) }
+
+        let stats: [String: Any] = ["total": items.count, "streak": streak, "moodTotal": moodTotal, "moodPleased": moodPleased,
+                                    "fb": fb, "perPersona": perPersona]
+        let personas: [[String: String]] = Persona.all.map { ["id": $0.id.rawValue, "name": $0.displayName, "letter": $0.letterName] }
+        func json(_ v: Any) -> String {
+            guard let d = try? JSONSerialization.data(withJSONObject: v, options: []), let s = String(data: d, encoding: .utf8) else { return "null" }
+            return s.replacingOccurrences(of: "</", with: "<\\/")
+        }
+        let hasArt = HTMLRenderer.hasUIFile("desk/desk-bg.png")
+        let sp = seat.persona
+        let hint = generating ? "\(sp.displayName)이(가) 글을 짓는 중" : (dates.contains(today) ? "오늘의 \(sp.letterName) 보기" : "\(sp.displayName)에게 오늘 글 받기")
+        let html = tpl
+            .replacingOccurrences(of: "{{DATA_JSON}}", with: json(data))
+            .replacingOccurrences(of: "{{STATS_JSON}}", with: json(stats))
+            .replacingOccurrences(of: "{{PERSONAS_JSON}}", with: json(personas))
+            .replacingOccurrences(of: "{{TODAY}}", with: today)
+            .replacingOccurrences(of: "{{HAS_TODAY}}", with: dates.contains(today) ? "true" : "false")
+            .replacingOccurrences(of: "{{HAS_FB_ICON}}", with: HTMLRenderer.hasUIFile("fb-sharp.png") ? "true" : "false")
+            .replacingOccurrences(of: "{{ART_CLASS}}", with: hasArt ? "has-art" : "")
+            .replacingOccurrences(of: "{{SEAT_PERSONA}}", with: seat.rawValue)
+            .replacingOccurrences(of: "{{SEAT_SHEET}}", with: generating ? "writing.png" : "idle.png")
+            .replacingOccurrences(of: "{{SEAT_MODE}}", with: generating ? "writing" : "idle")
+            .replacingOccurrences(of: "{{SEAT_HINT}}", with: HTMLEscape.escape(hint))
+        try? html.write(to: Paths.indexPage, atomically: true, encoding: .utf8)
     }
 }
 
