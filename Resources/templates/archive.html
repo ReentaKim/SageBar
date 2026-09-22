@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="../assets/styles/base.css">
 <style>
 /* ── 서재 장면: 960×600 비율, 글자 크기는 컨테이너 폭 기준(cqw) ── */
-body { display:block; background:#1a1512; padding:20px 12px 40px; }
-.study { max-width: 960px; margin: 0 auto; }
+body { display:flex; align-items:center; justify-content:center; min-height:100vh; box-sizing:border-box; background:#1a1512; padding:20px 12px; }
+.study { width:100%; max-width: 960px; margin: 0 auto; }
 .scene {
   position: relative; width: 100%; aspect-ratio: 960 / 600; container-type: inline-size;
   overflow: hidden; border-radius: 6px; box-shadow: 0 14px 40px rgba(0,0,0,.6);
@@ -73,12 +73,13 @@ body { display:block; background:#1a1512; padding:20px 12px 40px; }
 @keyframes pulse { 50% { transform: translateY(-4%); } }
 
 /* 앉은 현자 */
-.seat { left: 3.3%; top: 60%; width: 13.3%; height: 21.3%; cursor:pointer; }
-.seat .sprite { position:absolute; inset:0; background-repeat:no-repeat; background-position:0 0; image-rendering: pixelated; }
-.seat .sprite.idle { background-size: 200% 100%; animation: idle2 1.2s steps(2) infinite; }
-.seat .sprite.writing { background-size: 400% 100%; animation: writing4 .8s steps(4) infinite; }
-@keyframes idle2 { to { background-position: -200% 0; } }
-@keyframes writing4 { to { background-position: -400% 0; } }
+.seat { left: 3.3%; top: 60%; width: calc(100cqw * 128 / 960); height: calc(100cqw * 128 / 960); cursor:pointer; }
+.seat .sprite { position:absolute; inset:0; background-repeat:no-repeat; background-position:0 0; image-rendering: pixelated;
+  --frames: {{SEAT_FRAMES}}; background-size: calc(var(--frames) * 100%) 100%; }
+/* 글 쓰는 동작을 천천히 순환 — 몸은 고정, 붓만 움직임. 글 짓는 중이면 두 배 빠르게 */
+.seat .sprite.idle { animation: seat-loop 1.2s steps(var(--frames), end) infinite; }
+.seat .sprite.writing { animation: seat-loop .6s steps(var(--frames), end) infinite; }
+@keyframes seat-loop { to { background-position: calc(var(--frames) * -100%) 0; } }
 .seat .hint { position:absolute; left:100%; top:30%; margin-left:.8cqw; background:#f3ecd9; color:#1c1917; font-size:1.2cqw; padding:.35cqw .8cqw; border-radius:.5cqw; white-space:nowrap; opacity:0; transition:opacity .15s; pointer-events:none; }
 .seat:hover .hint { opacity:1; }
 
@@ -130,15 +131,24 @@ body { display:block; background:#1a1512; padding:20px 12px 40px; }
 .has-art .menu a.m-new .ic { background-image:url('../assets/ui/desk/menu-new.png'); }
 .has-art .menu a.m-profile .ic { background-image:url('../assets/ui/desk/menu-profile.png'); }
 .has-art .menu a.m-settings .ic { background-image:url('../assets/ui/desk/menu-settings.png'); }
+.has-art.has-list-icon .menu a.m-list .ic { background-image:url('../assets/ui/desk/menu-list.png'); }
+.menu a { padding: .5cqw .8cqw; }
+
+/* 목록 오버레이 (장면 위 종이 패널) */
+.list-overlay { inset:0; background: rgba(20,14,10,.55); z-index: 2000; display:flex; align-items:center; justify-content:center; }
+.list-overlay[hidden] { display:none; }
+.list-panel { width: 70%; height: 80%; background:#f3ecd9; border:.35cqw solid #b08d3e; border-radius:.8cqw; box-shadow:0 1cqw 2cqw rgba(0,0,0,.5); color:#1c1917; display:flex; flex-direction:column; overflow:hidden; }
+.list-head { display:flex; align-items:center; justify-content:space-between; padding:1cqw 1.4cqw .6cqw; border-bottom:.2cqw solid #b08d3e; }
+.list-head h3 { margin:0; font-size:1.6cqw; letter-spacing:.08em; color:#9b2226; }
+.list-close { font: inherit; font-size:1.4cqw; background:none; border:.15cqw solid #b08d3e; border-radius:.4cqw; width:2.6cqw; height:2.6cqw; cursor:pointer; color:#6b5e4a; }
+.list-close:hover { background:#e6d8b8; }
+.list-panel ul { list-style:none; margin:0; padding:.4cqw 1.4cqw 1cqw; overflow-y:auto; flex:1; }
+.list-panel li { display:flex; gap:1cqw; align-items:baseline; padding:.7cqw 0; border-bottom:.1cqw solid rgba(0,0,0,.08); font-size:1.35cqw; cursor:pointer; }
+.list-panel li:hover { background:rgba(176,141,62,.12); }
+.list-panel li .d { color:#6b5e4a; white-space:nowrap; } .list-panel li .s { flex:1; font-weight:700; word-break:keep-all; } .list-panel li .w { color:#6b5e4a; white-space:nowrap; font-size:1.15cqw; }
+.list-panel li .fb { color:#9b2226; font-size:1.1cqw; white-space:nowrap; }
 .menu .note { font-size:1.05cqw; color:#6b5e4a; margin-top:.6cqw; min-height:1.4cqw; }
 
-/* 아래 접힌 목록 */
-details.list { max-width:960px; margin:18px auto 0; color:#e9dfc7; font-size:14px; }
-details.list summary { cursor:pointer; color:#c9b990; }
-details.list ul { list-style:none; padding:0; margin:8px 0 0; }
-details.list li { display:flex; gap:12px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.08); }
-details.list a { color:#f1e7cf; text-decoration:none; } details.list a:hover { color:#f3c66b; }
-details.list .who { color:#c9b990; white-space:nowrap; } details.list .sub { flex:1; color:#d8ccae; }
 .empty-note { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:#f1e7cf; font-size:1.6cqw; text-align:center; opacity:.85; }
 </style>
 </head>
@@ -150,7 +160,7 @@ details.list .who { color:#c9b990; white-space:nowrap; } details.list .sub { fle
   <div class="pos lamp"><div class="art"></div></div>
   <div class="pos party" id="party"></div>
   <div class="pos seat" id="seat" title="오늘의 편지">
-    <div class="sprite {{SEAT_MODE}}" style="background-image:url('../assets/characters/{{SEAT_PERSONA}}/{{SEAT_SHEET}}')"></div>
+    <div class="sprite {{SEAT_MODE}}" style="background-image:url('{{SEAT_SHEET_URL}}')"></div>
     <div class="hint">{{SEAT_HINT}}</div>
   </div>
   <div class="pos pile" id="pile"></div>
@@ -170,12 +180,18 @@ details.list .who { color:#c9b990; white-space:nowrap; } details.list .sub { fle
     <a class="m-today" href="sagebar://today"><span class="ic"></span>오늘의 편지</a>
     <a class="m-new" href="#" id="m-new"><span class="ic"></span>새로 짓기</a>
     <a class="m-profile" href="sagebar://profile"><span class="ic"></span>인물지 열기</a>
+    <a class="m-list" href="#" id="m-list"><span class="ic"></span>목록으로 보기</a>
     <a class="m-settings" href="sagebar://settings"><span class="ic"></span>설정</a>
     <div class="note" id="m-note"></div>
   </div>
-</div>
 
-<details class="list"><summary>목록으로 보기 · 전체 <span id="list-count"></span>통</summary><ul id="list"></ul></details>
+  <div class="pos list-overlay" id="list-overlay" hidden>
+    <div class="list-panel">
+      <div class="list-head"><h3>지난 편지 목록 · <span id="list-count"></span>통</h3><button class="list-close" id="list-close" aria-label="닫기">✕</button></div>
+      <ul id="list"></ul>
+    </div>
+  </div>
+</div>
 </div>
 
 <script>
@@ -305,14 +321,22 @@ document.getElementById('st-moodbar').style.width = (STATS.moodTotal ? STATS.moo
 document.getElementById('st-fb').textContent = `${STATS.fb.sharp} · ${STATS.fb.dull} · ${STATS.fb.miss}`;
 document.getElementById('st-who').innerHTML = PERSONAS.map(p => `<span title="${p.name}">${p.name.slice(0, 2)} ${(STATS.perPersona[p.id] || { count: 0 }).count}</span>`).join('');
 
-// ── 목록 ──
+// ── 목록 오버레이 (메뉴 → 목록으로 보기) ──
 const list = document.getElementById('list');
+const overlay = document.getElementById('list-overlay');
 document.getElementById('list-count').textContent = DATA.length;
 DATA.slice().reverse().forEach(d => {
   const li = document.createElement('li');
-  li.innerHTML = `<a href="${d.date}.html">${d.date}</a><span class="sub">${d.subtitle || ''}</span><span class="who">${byId(d.persona).name} · ${byId(d.persona).letter}${d.feedback ? ' · ' + fbLabel(d.feedback) : ''}</span>`;
+  li.innerHTML = `<span class="d">${d.date}</span><span class="s">${d.subtitle || '(부제 없음)'}</span><span class="w">${byId(d.persona).name} · ${byId(d.persona).letter}</span>${d.feedback ? `<span class="fb">${fbLabel(d.feedback)}</span>` : ''}`;
+  li.addEventListener('click', () => { location.href = d.date + '.html'; });
   list.appendChild(li);
 });
+function openList() { overlay.hidden = false; }
+function closeList() { overlay.hidden = true; }
+document.getElementById('m-list').addEventListener('click', e => { e.preventDefault(); openList(); });
+document.getElementById('list-close').addEventListener('click', closeList);
+overlay.addEventListener('click', e => { if (e.target === overlay) closeList(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeList(); });
 
 renderShelf(); renderPile();
 </script>

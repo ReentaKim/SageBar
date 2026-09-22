@@ -249,6 +249,11 @@ enum LetterStore {
         }
         let hasArt = HTMLRenderer.hasUIFile("desk/desk-bg.png")
         let sp = seat.persona
+        // 앉은 현자: 서재 전용 스프라이트(ui/desk/sage-<id>.png, 6프레임)가 있으면 그것을, 없으면 편지용 writing.png(4프레임)
+        let hasSeatSprite = HTMLRenderer.hasUIFile("desk/sage-\(seat.rawValue).png")
+        let seatSheet = hasSeatSprite ? "../assets/ui/desk/sage-\(seat.rawValue).png" : "../assets/characters/\(seat.rawValue)/writing.png"
+        let seatFrames = hasSeatSprite ? "6" : "4"
+        let bodyClass = (hasArt ? "has-art" : "") + (HTMLRenderer.hasUIFile("desk/menu-list.png") ? " has-list-icon" : "")
         let hint = generating ? "\(sp.displayName)이(가) 글을 짓는 중" : (dates.contains(today) ? "오늘의 \(sp.letterName) 보기" : "\(sp.displayName)에게 오늘 글 받기")
         let html = tpl
             .replacingOccurrences(of: "{{DATA_JSON}}", with: json(data))
@@ -257,9 +262,10 @@ enum LetterStore {
             .replacingOccurrences(of: "{{TODAY}}", with: today)
             .replacingOccurrences(of: "{{HAS_TODAY}}", with: dates.contains(today) ? "true" : "false")
             .replacingOccurrences(of: "{{HAS_FB_ICON}}", with: HTMLRenderer.hasUIFile("fb-sharp.png") ? "true" : "false")
-            .replacingOccurrences(of: "{{ART_CLASS}}", with: hasArt ? "has-art" : "")
+            .replacingOccurrences(of: "{{ART_CLASS}}", with: bodyClass)
             .replacingOccurrences(of: "{{SEAT_PERSONA}}", with: seat.rawValue)
-            .replacingOccurrences(of: "{{SEAT_SHEET}}", with: generating ? "writing.png" : "idle.png")
+            .replacingOccurrences(of: "{{SEAT_SHEET_URL}}", with: seatSheet)
+            .replacingOccurrences(of: "{{SEAT_FRAMES}}", with: seatFrames)
             .replacingOccurrences(of: "{{SEAT_MODE}}", with: generating ? "writing" : "idle")
             .replacingOccurrences(of: "{{SEAT_HINT}}", with: HTMLEscape.escape(hint))
         try? html.write(to: Paths.indexPage, atomically: true, encoding: .utf8)
