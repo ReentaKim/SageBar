@@ -71,7 +71,8 @@ SCALE = 4
 
 
 def check_scale_blocks(im, scale=SCALE):
-    """정확히 scale배 nearest 확대인지 — 각 scale×scale 블록이 단색인지 표본 검사."""
+    """정확히 scale배 nearest 확대인지 — 각 scale×scale 블록이 단색인지 표본 검사.
+    (scale=2도 허용되는 자산이 있음: 서재 장면. detect_scale 참고)"""
     px = im.load()
     w, h = im.size
     bad = 0
@@ -91,13 +92,27 @@ def check_scale_blocks(im, scale=SCALE):
     return bad, total
 
 
+def detect_scale(im, allowed):
+    """허용된 배율 가운데 nearest 확대로 판정되는 가장 큰 값. 없으면 None."""
+    for s in sorted(allowed, reverse=True):
+        bad, total = check_scale_blocks(im, s)
+        if total and bad / total <= 0.05:
+            return s
+    return None
+
+
+# 서재 장면(ui/desk)은 도트 정체성을 지키는 범위에서 2배 밀도까지 허용한다 (PM 회신 desk-2).
+# 인물 캐릭터·인장·피드백 아이콘은 4배 고정 — 서재 위에 그대로 올라가는 요소라 밀도가 어긋나면 눈에 띈다.
+ALLOWED_SCALES_DESK = (4, 2)
+
+
 def frame_has_content(im, frame_w, i):
     frame = im.crop((i * frame_w, 0, (i + 1) * frame_w, im.size[1]))
     alpha = frame.split()[-1]
     return alpha.getbbox() is not None
 
 
-def check_dir(d, spec):
+def check_dir(d, spec, allowed_scales=(SCALE,)):
     problems = []
     for name, (w, h, frames, required) in spec.items():
         p = os.path.join(d, name)
@@ -131,9 +146,10 @@ def check_dir(d, spec):
         for i in range(frames):
             if not frame_has_content(im, frame_w, i):
                 problems.append(f"{name}: {i + 1}번째 프레임이 비어 있음")
-        bad, total = check_scale_blocks(im)
-        if total and bad / total > 0.05:
-            problems.append(f"{name}: {SCALE}배 nearest 확대가 아닌 듯함 (블록 불일치 {bad}/{total}) — 보간 없이 확대할 것")
+        found = detect_scale(im, allowed_scales)
+        if found is None:
+            want = "·".join(str(s) for s in sorted(allowed_scales, reverse=True))
+            problems.append(f"{name}: {want}배 nearest 확대가 아닌 듯함 — 도트 격자를 유지하고 보간 없이 확대할 것")
     return problems
 
 
@@ -184,7 +200,7 @@ def main():
         else:
             print("[ui] OK")
     if os.path.isdir(UI_DESK_DIR):
-        probs = check_dir(UI_DESK_DIR, UI_DESK_SPEC)
+        probs = check_dir(UI_DESK_DIR, UI_DESK_SPEC, allowed_scales=ALLOWED_SCALES_DESK)
         if probs:
             all_ok = False
             print(f"[ui/desk] 문제 {len(probs)}건")
