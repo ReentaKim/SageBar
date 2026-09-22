@@ -27,7 +27,14 @@ struct OnboardingView: View {
 
             checkRow(ok: claudeFound, title: "Claude Code CLI",
                      detail: claudeInfo.isEmpty ? "확인 중…" : claudeInfo,
-                     fix: claudeFound ? nil : "설치: https://claude.com/claude-code  (설치 후 터미널에서 한 번 로그인해 두세요)")
+                     fix: claudeFound ? nil : "SageBar는 Claude Code로 글을 짓습니다. 설치한 뒤 터미널에서 claude 를 한 번 실행해 로그인하고, 아래 \"다시 확인\"을 누르세요.")
+            if !claudeFound && !claudeInfo.isEmpty {
+                HStack {
+                    Button("설치 안내 열기") { NSWorkspace.shared.open(ClaudeCLI.installURL) }
+                    Button("다시 확인") { claudeInfo = ""; detect() }
+                    Spacer()
+                }
+            }
             checkRow(ok: hasHistory, title: "대화 기록 (~/.claude/projects)",
                      detail: hasHistory ? "찾았습니다. 이 기록으로 인물지를 짓습니다." : "아직 대화 기록이 없습니다. Claude Code를 며칠 써 본 뒤 다시 시작하면 더 정확해집니다.",
                      fix: nil)

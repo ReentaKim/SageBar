@@ -93,6 +93,25 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
         LetterStore.log("인쇄 대화상자 열기: \(window.title)")
     }
 
+    /// Claude Code CLI가 없을 때의 안내 화면 — 설치 링크와 절차
+    func showMissingCLI(persona: Persona) {
+        let extra = """
+        <div class="err" style="text-align:left">
+        SageBar는 이 Mac에 설치된 <b>Claude Code</b>로 글을 짓습니다. 지금은 <code>claude</code> 명령을 찾을 수 없습니다.<br><br>
+        1. <a href="\(ClaudeCLI.installURL.absoluteString)">claude.com/claude-code</a> 에서 Claude Code를 설치합니다.<br>
+        2. 터미널을 열어 <code>claude</code> 를 한 번 실행해 로그인합니다.<br>
+        3. 메뉴바의 SageBar → "오늘의 조언 보기"를 누르면 이어서 진행됩니다.<br><br>
+        이미 설치했다면 설정 › 고급에서 <code>claude</code> 경로를 직접 지정할 수 있습니다.
+        </div>
+        """
+        if let url = HTMLRenderer.writeStatusPage(persona: persona, title: "붓이 없나이다",
+                                                  line: "글을 지을 연장(Claude Code)이 이 Mac에 없습니다.",
+                                                  hint: "", animated: false, extra: extra) {
+            window?.title = "SageBar — Claude Code 설치 필요"
+            webView.loadFileURL(url, allowingReadAccessTo: Paths.appSupport)
+        }
+    }
+
     func showIndex() {
         let engine = SageEngine.shared
         LetterStore.renderArchive(seat: engine.todayPersona ?? engine.nextPersona(), generating: engine.isGenerating)

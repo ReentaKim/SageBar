@@ -4,8 +4,10 @@ import Foundation
 enum ClaudeCLI {
     struct CLIError: LocalizedError {
         let message: String
+        var notFound: Bool = false        // claude 실행 파일 자체가 없음 (설치 안내 대상)
         var errorDescription: String? { message }
     }
+    static let installURL = URL(string: "https://claude.com/claude-code")!
 
     static let extraPathDirs: [String] = [
         "\(NSHomeDirectory())/.local/bin",
@@ -74,7 +76,7 @@ enum ClaudeCLI {
     /// 프롬프트를 표준입력으로 넘겨 답변 전문을 돌려받는다. 블로킹 호출이므로 백그라운드에서 부른다.
     static func run(prompt: String, model: ClaudeModel, timeout: TimeInterval = 1800) throws -> String {
         guard let exe = locate() else {
-            throw CLIError(message: "Claude Code CLI(claude)를 찾을 수 없습니다. 설치 후 다시 시도하거나 설정 > 고급에서 경로를 지정하세요.")
+            throw CLIError(message: "Claude Code CLI(claude)를 찾을 수 없습니다. 설치 후 터미널에서 한 번 로그인하거나, 설정 › 고급에서 경로를 지정하세요.", notFound: true)
         }
         let p = Process()
         p.executableURL = exe
