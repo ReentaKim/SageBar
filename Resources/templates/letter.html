@@ -50,13 +50,17 @@
 
   {{FEEDBACK_HTML}}
   <div class="sage-controls">
-    <button class="sage-btn" onclick="window.print()">보관 (인쇄・PDF)</button>
+    <button class="sage-btn" onclick="sagePrint()">보관 (인쇄・PDF)</button>
     {{PREV_LINK}}
     <a class="sage-btn" href="index.html">지난 조언 모두</a>
   </div>
   <p class="sage-meta">{{UPPER_MARK}} {{UPPER_COUNT}}자 · {{LOWER_MARK}} {{LOWER_COUNT}}자 · 총 {{TOTAL_COUNT}}자 · {{MODEL}}</p>
 </div>
 <script>
+// 앱 안(WKWebView)에서는 window.print()가 동작하지 않으므로 앱에 인쇄를 맡긴다. 브라우저에서 열었으면 그대로 인쇄.
+function sagePrint() {
+  if (/SageBar/.test(navigator.userAgent)) { location.href = 'sagebar://print'; } else { window.print(); }
+}
 (function () {
   var box = document.querySelector('.sage-feedback'); if (!box) return;
   var key = 'sagebar-fb-' + box.dataset.date;

@@ -299,7 +299,9 @@ body {
 }
 
 @media print {
-  body { background: #fff; padding: 0; }
+  html, body { background: #fff !important; background-image: none !important; padding: 0; }   /* 배경 타일(인물별 인라인 CSS)보다 우선 */
+  .sage-banner, .sage-talk, .sage-avatar img, .sage-seal, .sage-quote, .sage-followup { -webkit-print-color-adjust: exact; print-color-adjust: exact; }   /* 머리 배경·표정·인장은 인쇄에도 그대로 */
+  .sage-talk { animation: none; }
   .sage-rod, .sage-controls, .sage-meta { display: none; }
   .sage-paper { animation: none; box-shadow: none; margin: 0; }
   .sage-scroll-wrap { max-width: 100%; }
