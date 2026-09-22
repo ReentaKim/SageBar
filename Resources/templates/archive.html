@@ -28,10 +28,10 @@ body { display:block; background:#1a1512; padding:20px 12px 40px; }
 .sky-evening .window .pane { background: linear-gradient(#e08a5a, #5a3a6a); }
 .sky-night .window .pane { background: radial-gradient(circle at 70% 30%, #f3e9c0 0 6%, transparent 7%), linear-gradient(#0c1330, #1f2a55); }
 .has-art .window { border: 0; background: none; }
-.has-art .sky-morning .window .pane { background: url('../assets/ui/desk/sky-morning.png') center / 100% 100%; }
-.has-art .sky-day .window .pane { background: url('../assets/ui/desk/sky-day.png') center / 100% 100%; }
-.has-art .sky-evening .window .pane { background: url('../assets/ui/desk/sky-evening.png') center / 100% 100%; }
-.has-art .sky-night .window .pane { background: url('../assets/ui/desk/sky-night.png') center / 100% 100%; }
+.has-art.sky-morning .window .pane { background: url('../assets/ui/desk/sky-morning.png') center / 100% 100%; }
+.has-art.sky-day .window .pane { background: url('../assets/ui/desk/sky-day.png') center / 100% 100%; }
+.has-art.sky-evening .window .pane { background: url('../assets/ui/desk/sky-evening.png') center / 100% 100%; }
+.has-art.sky-night .window .pane { background: url('../assets/ui/desk/sky-night.png') center / 100% 100%; }
 
 /* 서가 */
 .shelf { left: 23.3%; top: 4%; width: 43.4%; height: 18.7%; }
@@ -223,15 +223,21 @@ function renderPile() {
   const showBlank = !activeMonth && !HAS_TODAY;
   const n = items.length + (showBlank ? 1 : 0);
   if (!n) { pile.innerHTML = '<div class="empty-note">아직 쌓인 편지가 없습니다</div>'; return; }
-  const spread = Math.min(56, n * 5.5);
+  // 한 줄에 최대 7통. 겹침 간격을 두루마리 폭의 절반 이상으로 두어 끈이 가려지지 않게 한다.
+  const perRow = 7;
+  const rows = Math.ceil(n / perRow);
+  const step = Math.min(8.5, 56 / Math.max(1, Math.min(n, perRow) - 1));   // % 단위 가로 간격
   items.forEach((d, i) => {
     const el = document.createElement('div');
     el.className = `scroll p-${d.persona}`;
     const r = seeded(d.date);
-    const x = 4 + (n > 1 ? (i / Math.max(1, n - 1)) * spread : spread / 2) + (r - .5) * 6;
-    const y = 58 - i * (28 / Math.max(1, n)) + (r - .5) * 8;
-    el.style.left = x + '%'; el.style.top = y + '%'; el.style.zIndex = i + 1;
-    el.style.transform = `rotate(${(r - .5) * 10}deg)`;
+    const row = Math.floor(i / perRow);            // 0 = 가장 오래된 줄(뒤·위쪽)
+    const col = i % perRow;
+    const rowFromFront = rows - 1 - row;           // 0 = 맨 앞줄
+    const x = 4 + col * step + (r - .5) * 3 + rowFromFront * 3;
+    const y = 52 - rowFromFront * 26 + (r - .5) * 5;
+    el.style.left = x + '%'; el.style.top = y + '%'; el.style.zIndex = row * 20 + col + 1;
+    el.style.transform = `rotate(${(r - .5) * 6}deg)`;
     el.dataset.date = d.date; el.dataset.persona = d.persona;
     let inner = '<div class="art"></div>';
     if (d.mood === 'pleased' || d.mood === 'stern') inner += `<span class="mood ${d.mood}"></span>`;
@@ -244,7 +250,7 @@ function renderPile() {
   });
   if (showBlank) {
     const el = document.createElement('div');
-    el.className = 'scroll blank'; el.style.left = (4 + spread + 4) + '%'; el.style.top = '30%'; el.style.zIndex = n + 5;
+    el.className = 'scroll blank'; el.style.left = (4 + Math.min(items.length, perRow) * step + 2) + '%'; el.style.top = '48%'; el.style.zIndex = 500;
     el.innerHTML = '<div class="art"></div>';
     el.addEventListener('mouseenter', () => showTip(el, { date: TODAY, persona: '{{SEAT_PERSONA}}', subtitle: '아직 오늘 글이 없습니다 — 누르면 짓습니다', feedback: '' }));
     el.addEventListener('mouseleave', hideTip);
