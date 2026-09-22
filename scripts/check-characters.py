@@ -58,6 +58,9 @@ UI_DESK_SPEC = {   # 「현자의 서재」 장면 (요청서 5)
     "ledger.png": (272, 288, 1, False), "menu-panel.png": (272, 240, 1, False),
     "menu-today.png": (64, 64, 1, False), "menu-new.png": (64, 64, 1, False),
     "menu-profile.png": (64, 64, 1, False), "menu-settings.png": (64, 64, 1, False),
+    "menu-list.png": (64, 64, 1, False),
+    "sage-zhuge.png": (768, 128, 6, False), "sage-socrates.png": (768, 128, 6, False),   # 서재 전용 앉은 현자 (요청서 6)
+    "sage-nietzsche.png": (768, 128, 6, False), "sage-sejong.png": (768, 128, 6, False),
 }
 UI_DIR = os.path.join(ROOT, "Resources", "ui")
 UI_SPEC = {   # 인물 공통 UI 아이콘 (Resources/ui/)
