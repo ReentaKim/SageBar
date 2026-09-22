@@ -57,6 +57,13 @@ final class SageEngine: ObservableObject {
     // MARK: 스케줄
 
     func start() {
+        // Claude Code가 없으면 짓기를 시도하기 전에 바로 알린다
+        if ClaudeCLI.locate() == nil {
+            status = .failed("Claude Code CLI를 찾을 수 없습니다")
+            LetterWindowController.shared.show()
+            LetterWindowController.shared.showMissingCLI(persona: nextPersona().persona)
+            LetterStore.log("claude 실행 파일 없음 — 설치 안내 표시")
+        }
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -78,6 +85,7 @@ final class SageEngine: ObservableObject {
     /// 표시 시각 N분 전부터는 조용히 미리 짓는다.
     func tick() {
         guard AppSettings.onboarded, !isGenerating else { return }
+        guard ClaudeCLI.locate() != nil else { return }   // 설치 전에는 짓지 않는다 (start()에서 이미 안내함)
         let now = Date()
         let today = LetterStore.dateString(now)
         let minutesNow = Calendar.current.component(.hour, from: now) * 60 + Calendar.current.component(.minute, from: now)
@@ -153,7 +161,11 @@ final class SageEngine: ObservableObject {
         } catch {
             let msg = error.localizedDescription
             status = .failed(msg)
-            LetterWindowController.shared.showFailure(persona: persona, message: msg)
+            if (error as? ClaudeCLI.CLIError)?.notFound == true {
+                LetterWindowController.shared.showMissingCLI(persona: persona)
+            } else {
+                LetterWindowController.shared.showFailure(persona: persona, message: msg)
+            }
             throw error
         }
     }
