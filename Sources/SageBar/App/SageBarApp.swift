@@ -24,7 +24,7 @@ struct SageBarApp: App {
 enum HeadlessCLI {
     static func runIfRequested() {
         let args = CommandLine.arguments
-        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") else { return }
+        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") || args.contains("--debug-waiting") else { return }
 
         func value(after flag: String) -> String? {
             guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -54,6 +54,15 @@ enum HeadlessCLI {
                                             model: model, outputURL: preview)
                 print(preview.path)
                 exit(0)
+            }
+            // --debug-waiting <persona> [--fail]: 대기(또는 실패) 화면을 letters/_waiting.html 로 써서 확인
+            if args.contains("--debug-waiting") {
+                let pid = value(after: "--debug-waiting").flatMap(PersonaID.init(rawValue:)) ?? .zhuge
+                let p = pid.persona
+                let url = args.contains("--fail")
+                    ? HTMLRenderer.writeStatusPage(persona: p, title: p.failTitle, line: p.failLine, hint: "메뉴바 아이콘 → \"지금 새로 짓기\"로 다시 시도할 수 있습니다.", animated: false, extra: "<div class=\"err\">시험용 오류 문구</div>")
+                    : HTMLRenderer.writeStatusPage(persona: p, title: p.waitingTitle, line: p.waitingLine, hint: "보통 3~5분, 길면 30분 남짓 걸립니다. 이 창은 완성되면 저절로 바뀝니다.", animated: true)
+                print(url?.path ?? "실패"); exit(url == nil ? 1 : 0)
             }
             // --debug-menu-header <persona> <out.png> [--generating]: 메뉴 상단 캐릭터 칸을 그림으로 떠서 확인
             if args.contains("--debug-menu-header") {
