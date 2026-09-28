@@ -117,7 +117,7 @@ enum HeadlessCLI {
                 // --date YYYY-MM-DD 로 다른 날짜의 글을 지을 수 있다 (점검·연속성 시험용)
                 let genDate = value(after: "--date").flatMap { LetterStore.dateFormatter.date(from: $0) } ?? Date()
                 let r = try gen.generate(persona: persona, date: genDate)
-                note("분량 \(r.parsed.upperCount)/\(r.parsed.lowerCount)/\(r.parsed.totalCount)자, 한자 \(r.hanjaCount)자")
+                note("분량 점검 \(r.parsed.followupCount)/상 \(r.parsed.upperCount)/하 \(r.parsed.lowerCount)/총 \(r.parsed.totalCount)자 (목표 \(r.parsed.target(length))자), 한자 \(r.hanjaCount)자")
                 print(r.url.path)
             }
             exit(0)

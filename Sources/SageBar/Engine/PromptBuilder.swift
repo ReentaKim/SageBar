@@ -23,18 +23,20 @@ enum PromptBuilder {
 
     static func letterPrompt(persona: Persona, profile: String, recent: String, recentTopics: String,
                              date: Date, length: LetterLength, recentDays: Int,
-                             previous: HistoryEntry? = nil, feedback: String = "", chat: String = "") -> String {
+                             previous: HistoryEntry? = nil, feedback: String = "", chat: String = "",
+                             model: ClaudeModel = .opus) -> String {
         let today = LetterStore.dateString(date)
-        let upperTarget = length.minUpper + 200
-        let lowerTarget = length.minLower + 200
-        let total = length.minUpper + length.minLower
+        // 모델은 "약 N자"를 받으면 대체로 덜 쓴다 — 지시 숫자에 모델별 배율을 곱해 실제 분량을 목표에 맞춘다
+        func ask(_ n: Int) -> String { let a = lengthAsk(n, model); return "\(a)~\(a * 5 / 4)자" }
+        let total = lengthAsk(length.target(hasFollowup: previous != nil), model)
+        let cap = total * 5 / 4
         let followupFormat = previous == nil ? "" : """
         ---FOLLOWUP---
         (지난 조언 점검 — 위 "지난 글의 권고"에 적힌 항목 하나하나를 최근 발화 발췌와 대조해
          "했다 / 시도 중 / 안 했다 / 기록으로는 알 수 없다" 가운데 하나로 정직하게 판정하고 근거 발화를 인용한다.
          **기록이 없다는 것만으로 "안 했다"로 판정하지 마라** — 그럴 때는 "기록으로는 알 수 없다"로 두고 판단을 유보한다.
          "안 했다"는 안 했음을 보여주는 발화(반대로 행동했거나 미룬다고 말한 것)가 있을 때만 쓴다.
-         지어내지 마라. 300~600자. 지난 글이 다른 인물의 것이면 "지난번 \(PersonaID(rawValue: previous!.persona)?.persona.displayName ?? "")이(가) …"처럼
+         지어내지 마라. \(ask(length.followup))로 짧게 — 항목마다 한 문장이면 족하다. 지난 글이 다른 인물의 것이면 "지난번 \(PersonaID(rawValue: previous!.persona)?.persona.displayName ?? "")이(가) …"처럼
          그 인물을 밝힌다. 인물 어조를 유지하되, 잘한 것은 짧게 인정하고 안 한 것은 이유를 묻는다.
          구획 첫 줄에 종합 판정을 "FOLLOWUP_MOOD: pleased" (대체로 했다·시도 중) / "FOLLOWUP_MOOD: stern"
          (안 했음이 발화로 확인됨) / "FOLLOWUP_MOOD: neutral" (알 수 없다·반반 — 기본값) 가운데 하나로 적고,
@@ -98,15 +100,15 @@ enum PromptBuilder {
          이 문장이 편지의 가장 큰 제목으로 표시된다.)
         \(followupFormat)---UPPER---
         (\(persona.upperMark) "\(persona.upperTitle)" — AI 코딩 도구(Claude Code)를 어떻게 쓰면 좋을지,
-         상대가 아직 서투른 부분을 콕 집어 조언한다. 반드시 \(upperTarget)자 이상.
-         ### 로 시작하는 소제목을 3~4개 두고, 소제목은 한자 없이 완전한 한글 문구로 짓는다.
+         상대가 아직 서투른 부분을 콕 집어 조언한다. \(ask(length.upper)).
+         ### 로 시작하는 소제목을 \(length.subheads) 두고, 소제목은 한자 없이 완전한 한글 문구로 짓는다.
          인물지 5절의 강점·약점과 최근 발화에서 드러난 습관을 근거로 구체적 처방을 낸다.)
         ---LOWER---
         (\(persona.lowerMark) "\(persona.lowerTitle)" — 상대의 일과 삶의 방향에 대한 조언.
-         반드시 \(lowerTarget)자 이상. ### 소제목 3~4개, 역시 순한글.
+         \(ask(length.lower)). ### 소제목 \(length.subheads), 역시 순한글.
          인물지 2~4절과 6절, 최근 발화에서 드러난 실제 상황에 근거해 방향을 짚는다.)
         ---CLOSING---
-        (맺음 문단 2~3개. 인물답게 마무리하되, 끝에서만 짧게 격려한다.)
+        (맺음 한두 문장, \(ask(length.closing)). 인물답게 마무리하되, 끝에서만 짧게 격려한다.)
         QUOTE_KOREAN: (오늘의 한 구절 — \(persona.quoteSourceHint) 가운데 실제로 있는 구절을
          한글 풀이로만 옮긴 한 문장. 원문은 절대 적지 마라.)
         QUOTE_SOURCE: (그 구절의 출처를 한글로만, 예: 논어 / 플라톤 변명 / 즐거운 학문 / 세종실록)
@@ -116,18 +118,32 @@ enum PromptBuilder {
         - (항목 3)
 
         위 형식의 구획 표시(SUBTITLE:, ---UPPER--- 등)를 정확히 그대로 쓰고, 그 외의 안내문·설명은
-        절대 덧붙이지 마라. 상편·하편 분량 합이 \(total)자를 넘어야 한다(점검 구획은 분량에 넣지 않는다).
+        절대 덧붙이지 마라.
+
+        ────────── 분량 — 길게 쓰지 말 것 ──────────
+        상대는 아침에 이 글을 \(length.minutes)분 안에 다 읽는다. \(previous == nil ? "" : "점검·")상편·하편·맺음을 합쳐 **\(total)~\(cap)자**(공백 제외),
+        \(cap)자를 넘기지 마라(실천 세 가지·한 구절은 세지 않는다). 짧은 대신 한 문장 한 문장을 구체적으로 —
+        일반론·되풀이·수식어부터 덜어 내고, 상대의 실제 발화 인용과 오늘 할 일은 남긴다.
         쓰기를 마쳤으면 본문 전체를 다시 훑어, 한자 글자가 단 하나라도 섞여 있지 않은지 스스로 검토하라.
         """
     }
 
-    static func retryNote(length: LetterLength) -> String {
+    /// 모델별 분량 배율 (시험 측정값). SAGEBAR_LENGTH_SCALE 환경변수로 덮어써 시험할 수 있다.
+    static func lengthAsk(_ n: Int, _ model: ClaudeModel) -> Int {
+        let scale = ProcessInfo.processInfo.environment["SAGEBAR_LENGTH_SCALE"].flatMap(Double.init)
+            ?? { switch model { case .sonnet: return 1.1; case .opus: return 1.3 } }()
+        return Int((Double(n) * scale / 10).rounded()) * 10
+    }
+
+    static func retryNote(length: LetterLength, target: Int, actual: Int, tooLong: Bool) -> String {
         """
 
         ── 추가 지시 ──
-        지난 번 답변은 분량이 모자랐다. 첫 부분은 \(length.minUpper + 400)자, 둘째 부분은 \(length.minLower + 400)자를
-        반드시 넘기도록 각 소제목마다 구체적 사례·근거를 한 단락씩 더 보태어 다시 지어라.
-        구획 표시 형식은 동일하게 지켜라.
+        지난 번 답변은 \(actual)자로 \(tooLong ? "너무 길었다" : "너무 짧았다"). 목표는 약 \(target)자다.
+        \(tooLong
+          ? "각 소제목에서 일반론·되풀이·수식어를 덜어 내어 약 \(target)자로 줄여 다시 지어라. 상대의 발화 인용과 실천 문장은 남긴다."
+          : "각 소제목마다 구체적 사례·근거를 한두 문장씩 보태어 약 \(target)자로 다시 지어라.")
+        소제목 수와 구획 표시 형식은 동일하게 지켜라.
         """
     }
 

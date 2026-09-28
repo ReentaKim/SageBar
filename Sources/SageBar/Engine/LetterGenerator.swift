@@ -40,17 +40,20 @@ struct LetterGenerator {
         onStage("\(persona.displayName)이(가) 글을 짓는 중")
         let prompt = PromptBuilder.letterPrompt(persona: persona, profile: profile, recent: recent,
                                                 recentTopics: topics, date: date, length: length, recentDays: recentDays,
-                                                previous: previous, feedback: feedback, chat: chat)
+                                                previous: previous, feedback: feedback, chat: chat, model: model)
         var raw = try ClaudeCLI.run(prompt: prompt, model: model)
         try? raw.write(to: LetterStore.rawURL(for: dateStr), atomically: true, encoding: .utf8)
         var parsed = try LetterParser.parse(raw)
 
         if !parsed.nearlyMeetsLength(length) {
-            LetterStore.log("[\(id.rawValue)] 분량 크게 미달 (\(parsed.upperCount)/\(parsed.lowerCount)) — 재시도")
-            onStage("분량이 모자라 다시 짓는 중")
-            if let retryRaw = try? ClaudeCLI.run(prompt: prompt + PromptBuilder.retryNote(length: length), model: model),
+            let target = parsed.target(length), tooLong = parsed.isTooLong(length)
+            LetterStore.log("[\(id.rawValue)] 분량 벗어남 (\(parsed.totalCount)자/목표 \(target)자) — 재시도")
+            onStage(tooLong ? "너무 길어 줄여 짓는 중" : "분량이 모자라 다시 짓는 중")
+            let note = PromptBuilder.retryNote(length: length, target: PromptBuilder.lengthAsk(target, model),
+                                               actual: parsed.totalCount, tooLong: tooLong)
+            if let retryRaw = try? ClaudeCLI.run(prompt: prompt + note, model: model),
                let retryParsed = try? LetterParser.parse(retryRaw),
-               retryParsed.totalCount > parsed.totalCount {
+               abs(retryParsed.totalCount - retryParsed.target(length)) < abs(parsed.totalCount - target) {
                 raw = retryRaw
                 parsed = retryParsed
                 try? raw.write(to: LetterStore.rawURL(for: dateStr), atomically: true, encoding: .utf8)
@@ -71,7 +74,7 @@ struct LetterGenerator {
         if !chat.isEmpty { LetterStore.log("[\(id.rawValue)] 지난 글 뒤 대화 \(chat.count)자 이어받음") }
         if previous != nil { LetterStore.log("[\(id.rawValue)] 지난 조언 점검 \(parsed.followup.isEmpty ? "없음" : "\(LetterParser.charCount(parsed.followup))자"), 실천 항목 \(parsed.actions.count)개") }
         LetterStore.renderIndex()
-        LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (\(parsed.upperCount)/\(parsed.lowerCount)/\(parsed.totalCount)자, 분량 \(parsed.meetsLength(length) ? "충족" : (parsed.nearlyMeetsLength(length) ? "근접" : "미달")))")
+        LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (점검 \(parsed.followupCount)/상 \(parsed.upperCount)/하 \(parsed.lowerCount)/총 \(parsed.totalCount)자, 목표 \(parsed.target(length))자, 분량 \(parsed.meetsLength(length) ? "충족" : (parsed.nearlyMeetsLength(length) ? "근접" : "미달")))")
 
         // 5) 인물지가 오래됐거나, 최근 "내 얘기와 달랐다" 반응이 2회 이상이면 뒤에서 조용히 다시 짓는다
         let missCount = LetterStore.recentMissCount()

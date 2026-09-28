@@ -14,17 +14,26 @@ struct ParsedLetter {
 
     var upperCount: Int { LetterParser.charCount(upper) }
     var lowerCount: Int { LetterParser.charCount(lower) }
-    var totalCount: Int { upperCount + lowerCount + LetterParser.charCount(closing) }
+    var followupCount: Int { LetterParser.charCount(followup) }
+    /// 아침에 읽는 양 — 점검·상편·하편·맺음
+    var totalCount: Int { followupCount + upperCount + lowerCount + LetterParser.charCount(closing) }
 
+    func target(_ length: LetterLength) -> Int { length.target(hasFollowup: !followup.isEmpty) }
+
+    /// 목표의 85~120%
     func meetsLength(_ length: LetterLength) -> Bool {
-        upperCount >= length.minUpper && lowerCount >= length.minLower
+        let t = Double(target(length)), n = Double(totalCount)
+        return n >= t * 0.85 && n <= t * 1.2
     }
 
-    /// 기준의 75% 이상이면 "거의 충족" — 이때는 3분 넘게 걸리는 재시도를 하지 않는다
+    /// 목표의 70~150%면 "거의 맞음" — 이때는 몇 분 걸리는 재시도를 하지 않는다
     /// (격언체인 니체처럼 문체상 짧게 나오는 인물이 있다)
     func nearlyMeetsLength(_ length: LetterLength) -> Bool {
-        Double(upperCount) >= Double(length.minUpper) * 0.75 && Double(lowerCount) >= Double(length.minLower) * 0.75
+        let t = Double(target(length)), n = Double(totalCount)
+        return n >= t * 0.7 && n <= t * 1.5
     }
+
+    func isTooLong(_ length: LetterLength) -> Bool { Double(totalCount) > Double(target(length)) * 1.5 }
 }
 
 enum LetterParser {
