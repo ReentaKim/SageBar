@@ -6,6 +6,7 @@ enum ConversationExtractor {
     struct Utterance {
         let timestamp: String
         let project: String
+        let folder: String
         let text: String
     }
 
@@ -21,26 +22,63 @@ enum ConversationExtractor {
 
     static var hasAnyHistory: Bool { !jsonlFiles().isEmpty }
 
-    static func jsonlFiles() -> [URL] {
+    /// 프로젝트 폴더들. SageBar 자신이 claude -p 를 부른 세션(작업 폴더 = Paths.logs)은 사용자 발화가 아니라 뺀다.
+    static func projectDirs() -> [URL] {
         let fm = FileManager.default
         guard let projects = try? fm.contentsOfDirectory(at: projectsDir, includingPropertiesForKeys: nil) else { return [] }
-        // SageBar 자신이 claude -p 를 부른 세션(작업 폴더 = Paths.logs)은 사용자 발화가 아니다
         let ownDir = Paths.logs.path.replacingOccurrences(of: "[^A-Za-z0-9]", with: "-", options: .regularExpression)
+        return projects.filter {
+            (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true && $0.lastPathComponent != ownDir
+        }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    /// 읽을 대화 파일. 설정에서 뺀 프로젝트는 건너뛰고, since가 있으면 그보다 오래 손대지 않은 파일은 열지 않는다.
+    static func jsonlFiles(excluding excluded: Set<String> = AppSettings.excludedProjects, modifiedSince since: Date? = nil) -> [URL] {
+        let fm = FileManager.default
         var out: [URL] = []
-        for p in projects {
-            guard (try? p.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
-            if p.lastPathComponent == ownDir { continue }
-            let files = (try? fm.contentsOfDirectory(at: p, includingPropertiesForKeys: nil)) ?? []
-            out += files.filter { $0.pathExtension == "jsonl" }
+        for p in projectDirs() where !excluded.contains(p.lastPathComponent) {
+            let files = (try? fm.contentsOfDirectory(at: p, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+            out += files.filter { f in
+                guard f.pathExtension == "jsonl" else { return false }
+                guard let since else { return true }
+                let m = (try? f.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantFuture
+                return m >= since
+            }
         }
         return out
     }
 
-    /// "-Users-me-work-foo" → "work-foo" (홈 디렉터리 부분을 떼어 낸다)
-    static func cleanProjectName(_ dirname: String) -> String {
-        let homePrefix = NSHomeDirectory().replacingOccurrences(of: "/", with: "-") + "-"
-        if dirname.hasPrefix(homePrefix) { return String(dirname.dropFirst(homePrefix.count)) }
-        return dirname
+    struct ProjectSummary: Identifiable {
+        let folder: String       // ~/.claude/projects 아래 폴더 이름 (제외 목록의 키)
+        let name: String         // 보여 줄 이름
+        let recentCount: Int     // 최근 N일 발화 수
+        let lastDate: String     // 마지막 발화 날짜
+        var id: String { folder }
+    }
+
+    /// 설정 화면용: 프로젝트마다 최근 발화 수와 마지막 날짜. 제외 여부와 상관없이 전부 보여 준다.
+    static func projectSummaries(days: Int = AppSettings.recentDays) -> [ProjectSummary] {
+        let cutoff = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-Double(days) * 86400))
+        let rows = utterances(in: jsonlFiles(excluding: []))
+        var byFolder: [String: [Utterance]] = [:]
+        for r in rows { byFolder[r.folder, default: []].append(r) }
+        return projectDirs().map { dir in
+            let items = byFolder[dir.lastPathComponent] ?? []
+            return ProjectSummary(folder: dir.lastPathComponent,
+                                  name: cleanProjectName(dir.lastPathComponent),
+                                  recentCount: items.filter { $0.timestamp >= cutoff }.count,
+                                  lastDate: items.last.map { String($0.timestamp.prefix(10)) } ?? "")
+        }
+        .sorted { ($0.lastDate, $0.name) > ($1.lastDate, $1.name) }
+    }
+
+    /// "-Users-me-work-foo" → "work-foo" (홈 디렉터리 부분을 떼어 낸다).
+    /// Claude Code는 경로의 영숫자 아닌 글자(/ . _ 공백 등)를 모두 "-"로 바꿔 폴더 이름을 만든다.
+    static func cleanProjectName(_ dirname: String, home: String = NSHomeDirectory()) -> String {
+        let homePrefix = home.replacingOccurrences(of: "[^A-Za-z0-9]", with: "-", options: .regularExpression)
+        guard dirname.hasPrefix(homePrefix) else { return dirname }
+        let rest = dirname.dropFirst(homePrefix.count).drop { $0 == "-" }
+        return rest.isEmpty ? "~" : String(rest)
     }
 
     static func extractTexts(_ content: Any?) -> [String] {
@@ -70,10 +108,13 @@ enum ConversationExtractor {
         return s
     }
 
-    static func allUtterances() -> [Utterance] {
+    static func allUtterances() -> [Utterance] { utterances(in: jsonlFiles()) }
+
+    static func utterances(in files: [URL]) -> [Utterance] {
         var rows: [Utterance] = []
-        for file in jsonlFiles() {
-            let project = cleanProjectName(file.deletingLastPathComponent().lastPathComponent)
+        for file in files {
+            let folder = file.deletingLastPathComponent().lastPathComponent
+            let project = cleanProjectName(folder)
             guard let data = try? Data(contentsOf: file) else { continue }
             let text = String(decoding: data, as: UTF8.self)
             for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
@@ -87,7 +128,7 @@ enum ConversationExtractor {
                     let t = shrinkImageTags(raw.trimmingCharacters(in: .whitespacesAndNewlines))
                     if shouldSkip(t) { continue }
                     let cut = truncate(t)
-                    if !cut.isEmpty { rows.append(Utterance(timestamp: ts, project: project, text: cut)) }
+                    if !cut.isEmpty { rows.append(Utterance(timestamp: ts, project: project, folder: folder, text: cut)) }
                 }
             }
         }
@@ -98,6 +139,7 @@ enum ConversationExtractor {
     struct PlanSummary { let mtime: String; let file: String; let title: String; let firstParagraph: String }
 
     static func loadPlans() -> [PlanSummary] {
+        guard AppSettings.includePlans else { return [] }
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(at: plansDir, includingPropertiesForKeys: [.contentModificationDateKey]) else { return [] }
         var out: [PlanSummary] = []
@@ -128,8 +170,9 @@ enum ConversationExtractor {
 
     /// 최근 N일치 발화를 시간순 마크다운으로.
     static func recentMarkdown(days: Int) -> String {
-        let cutoff = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-Double(days) * 86400))
-        let rows = allUtterances().filter { $0.timestamp >= cutoff }
+        let since = Date().addingTimeInterval(-Double(days) * 86400)
+        let cutoff = ISO8601DateFormatter().string(from: since)
+        let rows = utterances(in: jsonlFiles(modifiedSince: since)).filter { $0.timestamp >= cutoff }
         var out = "# 최근 \(days)일 발화 발췌 (\(rows.count)건)\n\n"
         for r in rows {
             let date = r.timestamp.isEmpty ? "????-??-??" : String(r.timestamp.prefix(10))

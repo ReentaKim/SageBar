@@ -136,6 +136,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
         if onboarded {
             menu.addItem(makeItem("오늘의 조언 보기", #selector(showToday), "o"))
+            addActionsMenu(to: menu)
 
             let regen = NSMenuItem(title: "지금 새로 짓기", action: nil, keyEquivalent: "")
             let sub = NSMenu()
@@ -166,6 +167,27 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     }
 
     func menuDidClose(_ menu: NSMenu) { header.stop() }
+
+    /// 오늘 편지의 실천 세 가지 — 누르면 했다/안 했다 표시가 바뀐다
+    private func addActionsMenu(to menu: NSMenu) {
+        let today = LetterStore.dateString()
+        guard let entry = LetterStore.history().last(where: { $0.date == today }),
+              let acts = entry.actions, !acts.isEmpty else { return }
+        let marks = LetterStore.actionMarks(date: today)
+        let doneCount = marks.filter { $0 }.count
+        let title = PersonaID(rawValue: entry.persona)?.persona.actionsTitle ?? "오늘 해 볼 것"
+        let parent = NSMenuItem(title: "\(title) (\(doneCount)/\(acts.count))", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        for (i, a) in acts.enumerated() {
+            let mi = makeItem(a.count > 60 ? String(a.prefix(60)) + "…" : a, #selector(toggleAction(_:)), "")
+            mi.state = i < marks.count && marks[i] ? .on : .off
+            mi.representedObject = i
+            mi.toolTip = a
+            sub.addItem(mi)
+        }
+        parent.submenu = sub
+        menu.addItem(parent)
+    }
 
     private func headerText(_ engine: SageEngine, onboarded: Bool) -> (String, String) {
         switch engine.status {
@@ -199,6 +221,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     @objc private func regenerateNext() { SageEngine.shared.regenerate(persona: nil) }
     @objc private func regeneratePersona(_ sender: NSMenuItem) {
         SageEngine.shared.regenerate(persona: (sender.representedObject as? String).flatMap(PersonaID.init(rawValue:)))
+    }
+    @objc private func toggleAction(_ sender: NSMenuItem) {
+        guard let i = sender.representedObject as? Int else { return }
+        let today = LetterStore.dateString()
+        LetterStore.setActionDone(date: today, index: i, done: sender.state != .on)
+        LetterWindowController.shared.refreshActionMarks(date: today)
     }
     @objc private func showArchive() { LetterWindowController.shared.showIndex() }
     @objc private func showOnboarding() { OnboardingWindowController.shared.show() }

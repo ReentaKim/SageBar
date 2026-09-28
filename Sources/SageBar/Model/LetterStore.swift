@@ -50,6 +50,7 @@ struct HistoryEntry: Codable {
     var actions: [String]? = nil     // 그날 권한 실천 항목 (다음 날 점검 근거)
     var feedback: String? = nil      // "sharp"(찔렸다) / "dull"(뻔했다) / "miss"(내 얘기와 달랐다)
     var mood: String? = nil          // 지난 조언 점검 판정 pleased / stern / neutral
+    var done: [Bool]? = nil          // 실천 항목마다 독자가 직접 "했다"고 표시했는지 (actions와 같은 순서)
 }
 
 /// 편지 아래 답장 칸에서 주고받은 말 한 마디
@@ -105,12 +106,40 @@ enum LetterStore {
         var entry = entry
         let all = history()
         // 같은 날짜를 다시 지을 때 이미 남긴 반응은 보존한다
-        if entry.feedback == nil, let old = all.first(where: { $0.date == entry.date }) { entry.feedback = old.feedback }
+        if let old = all.first(where: { $0.date == entry.date }) {
+            if entry.feedback == nil { entry.feedback = old.feedback }
+            // 실천 표시는 항목이 그대로일 때만 이어받는다 (다시 지어 항목이 바뀌면 새로 시작)
+            if entry.done == nil, old.actions == entry.actions { entry.done = old.done }
+        }
         var rows = all.filter { $0.date != entry.date }
         rows.append(entry)
+        writeHistory(rows)
+    }
+
+    static func writeHistory(_ rows: [HistoryEntry]) {
         let enc = JSONEncoder()
         let lines = rows.compactMap { try? enc.encode($0) }.compactMap { String(data: $0, encoding: .utf8) }
         try? (lines.joined(separator: "\n") + "\n").write(to: Paths.history, atomically: true, encoding: .utf8)
+    }
+
+    /// 실천 항목 하나를 했다/안 했다로 표시한다. 해당 날짜나 항목이 없으면 false.
+    @discardableResult
+    static func setActionDone(date: String, index: Int, done: Bool) -> Bool {
+        var rows = history()
+        guard let i = rows.firstIndex(where: { $0.date == date }),
+              let acts = rows[i].actions, acts.indices.contains(index) else { return false }
+        var marks = rows[i].done ?? []
+        if marks.count < acts.count { marks += Array(repeating: false, count: acts.count - marks.count) }
+        marks[index] = done
+        rows[i].done = marks
+        writeHistory(rows)
+        return true
+    }
+
+    static func actionMarks(date: String) -> [Bool] {
+        guard let e = history().first(where: { $0.date == date }), let acts = e.actions else { return [] }
+        let marks = e.done ?? []
+        return acts.indices.map { $0 < marks.count ? marks[$0] : false }
     }
 
     static func recentTopics(limit: Int = 14) -> String {
@@ -130,9 +159,7 @@ enum LetterStore {
         var rows = history()
         guard let i = rows.firstIndex(where: { $0.date == date }) else { return false }
         rows[i].feedback = value
-        let enc = JSONEncoder()
-        let lines = rows.compactMap { try? enc.encode($0) }.compactMap { String(data: $0, encoding: .utf8) }
-        try? (lines.joined(separator: "\n") + "\n").write(to: Paths.history, atomically: true, encoding: .utf8)
+        writeHistory(rows)
         return true
     }
 
@@ -274,6 +301,7 @@ enum LetterStore {
         var perPersona: [String: [String: Int]] = [:]
         var fb = ["sharp": 0, "dull": 0, "miss": 0]
         var moodTotal = 0, moodPleased = 0
+        var actTotal = 0, actDone = 0
         for info in items {
             let pid = info.persona?.rawValue ?? "zhuge"
             var c = perPersona[pid] ?? ["count": 0, "sharp": 0]
@@ -282,6 +310,7 @@ enum LetterStore {
             if h?.feedback == "sharp" { c["sharp", default: 0] += 1 }
             if let f = h?.feedback, fb[f] != nil { fb[f, default: 0] += 1 }
             if let m = h?.mood, ["pleased", "stern"].contains(m) { moodTotal += 1; if m == "pleased" { moodPleased += 1 } }
+            if let acts = h?.actions { actTotal += acts.count; actDone += (h?.done ?? []).prefix(acts.count).filter { $0 }.count }
             perPersona[pid] = c
         }
         // 연속 일수: 오늘(또는 어제)부터 거꾸로 이어진 날 수
@@ -292,7 +321,7 @@ enum LetterStore {
         while dates.contains(dateString(cursor)) { streak += 1; cursor = cursor.addingTimeInterval(-86400) }
 
         let stats: [String: Any] = ["total": items.count, "streak": streak, "moodTotal": moodTotal, "moodPleased": moodPleased,
-                                    "fb": fb, "perPersona": perPersona]
+                                    "actTotal": actTotal, "actDone": actDone, "fb": fb, "perPersona": perPersona]
         let personas: [[String: String]] = Persona.all.map { ["id": $0.id.rawValue, "name": $0.displayName, "letter": $0.letterName] }
         func json(_ v: Any) -> String {
             guard let d = try? JSONSerialization.data(withJSONObject: v, options: []), let s = String(data: d, encoding: .utf8) else { return "null" }

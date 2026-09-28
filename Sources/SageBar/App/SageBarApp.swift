@@ -24,7 +24,7 @@ struct SageBarApp: App {
 enum HeadlessCLI {
     static func runIfRequested() {
         let args = CommandLine.arguments
-        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") || args.contains("--debug-waiting") || args.contains("--chat") || args.contains("--check-update") else { return }
+        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") || args.contains("--debug-waiting") || args.contains("--chat") || args.contains("--check-update") || args.contains("--projects") else { return }
 
         func value(after flag: String) -> String? {
             guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -39,6 +39,16 @@ enum HeadlessCLI {
             return enabled.first ?? .zhuge
         }()
         func note(_ s: String) { FileHandle.standardError.write(Data((s + "\n").utf8)) }
+
+        // --projects: 읽는 범위 — 프로젝트마다 최근 발화 수, 제외 여부
+        if args.contains("--projects") {
+            let excluded = AppSettings.excludedProjects
+            for p in ConversationExtractor.projectSummaries() {
+                print("\(excluded.contains(p.folder) ? "✗ 제외" : "✓ 읽음")  \(p.name)  최근 \(AppSettings.recentDays)일 \(p.recentCount)건  마지막 \(p.lastDate.isEmpty ? "—" : p.lastDate)")
+            }
+            print("계획 문서: \(AppSettings.includePlans ? "읽음" : "제외")")
+            exit(0)
+        }
 
         do {
             // --render-preview <persona> [--date YYYY-MM-DD]: 이미 받은 원문(raw/)을 다른 인물 테마로 다시 엮어 본다 (디자인 확인용, claude 호출 없음)

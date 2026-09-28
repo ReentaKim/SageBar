@@ -141,6 +141,7 @@ Headless test from a terminal:
 | `~/Library/Application Support/SageBar/` | Profile, recent excerpts, letters (HTML), raw output, history, logs | All local. Delete with the app if you like. |
 
 - Apart from a daily version check (below), the app itself makes **no network requests**. The other outbound traffic is the `claude` CLI call to Anthropic, whose prompt contains your profile and recent prompt excerpts — the same kind of content that already goes there when you use Claude Code.
+- **You choose what is read.** Settings › 읽는 범위 (Scope) lets you turn each project on or off; conversations from a project you turn off are never used in letters, the profile or replies. Plan documents can be turned off too. After changing the scope, press "인물지 새로 짓기" (rebuild profile from scratch) so nothing from excluded projects remains in the old profile.
 - The profile prompt forbids recording phone numbers, addresses, account numbers and the like, but anything you typed into a conversation may appear in the excerpts. You can open and edit the profile from Settings › Advanced.
 - No telemetry, analytics or automatic installs. The version check is a daily request of the latest version number on GitHub (it sends nothing but a User-Agent with the app version; turn it off in Settings › General).
 

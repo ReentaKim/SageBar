@@ -60,6 +60,8 @@ enum SettingsKey {
     static let recentDays = "recentDays"
     static let profileUpdatedAt = "profileUpdatedAt"
     static let checkUpdates = "checkUpdates"
+    static let excludedProjects = "excludedProjects"  // 줄바꿈으로 이은 ~/.claude/projects 폴더 이름
+    static let includePlans = "includePlans"
 }
 
 enum AppSettings {
@@ -80,6 +82,8 @@ enum AppSettings {
             SettingsKey.recentDays: 14,
             SettingsKey.profileUpdatedAt: "",
             SettingsKey.checkUpdates: true,
+            SettingsKey.excludedProjects: "",
+            SettingsKey.includePlans: true,
         ])
     }
 
@@ -97,6 +101,13 @@ enum AppSettings {
     static var claudePath: String { d.string(forKey: SettingsKey.claudePath) ?? "" }
     static var checkUpdates: Bool { d.bool(forKey: SettingsKey.checkUpdates) }
     static var recentDays: Int { max(1, d.integer(forKey: SettingsKey.recentDays)) }
+    static var includePlans: Bool { d.bool(forKey: SettingsKey.includePlans) }
+
+    /// 조언에 쓰지 않을 프로젝트 폴더 이름들
+    static var excludedProjects: Set<String> {
+        get { Set((d.string(forKey: SettingsKey.excludedProjects) ?? "").split(separator: "\n").map(String.init)) }
+        set { d.set(newValue.sorted().joined(separator: "\n"), forKey: SettingsKey.excludedProjects) }
+    }
 
     static var lastShownDate: String {
         get { d.string(forKey: SettingsKey.lastShownDate) ?? "" }
