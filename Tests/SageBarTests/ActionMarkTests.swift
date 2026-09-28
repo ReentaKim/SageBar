@@ -71,3 +71,34 @@ struct ExtractorTests {
         #expect(ConversationExtractor.cleanProjectName("-private-tmp", home: home) == "-private-tmp")
     }
 }
+
+@Suite("프로젝트 실제 경로")
+struct ProjectRootTests {
+    @Test("한글 경로도 폴더 이름과 똑같이 바뀐다")
+    func mangles() {
+        #expect(ConversationExtractor.mangle("/Users/maba.reenta/Cowork/현대차보안") == "-Users-maba-reenta-Cowork------")
+    }
+
+    @Test("하위 폴더가 아니라 뿌리를 고른다")
+    func picksRoot() {
+        let folder = "-Users-maba-reenta-Cowork------"
+        let root = ConversationExtractor.pickRoot(folder: folder, candidates: [
+            "/Users/maba.reenta/Cowork/현대차보안/_현장보안점검_v0.2",
+            "/Users/maba.reenta/Cowork/현대차보안",
+        ])
+        #expect(root == "/Users/maba.reenta/Cowork/현대차보안")
+        #expect(ConversationExtractor.pickRoot(folder: folder, candidates: [String]()) == nil)
+        // 작업 폴더 이름을 나중에 바꿔 맞는 것이 없으면 가장 짧은 경로
+        #expect(ConversationExtractor.pickRoot(folder: "-Users-me-CC-3-web-kia-store",
+                                               candidates: ["/Users/me/CC/kia-store/src", "/Users/me/CC/kia-store"]) == "/Users/me/CC/kia-store")
+    }
+
+    @Test("홈 아래는 ~/ 로, 밖은 그대로")
+    func displaysName() {
+        let home = "/Users/maba.reenta"
+        #expect(ConversationExtractor.displayName(root: "/Users/maba.reenta/Cowork/현대차보안", home: home) == "~/Cowork/현대차보안")
+        #expect(ConversationExtractor.displayName(root: "/Users/maba.reenta", home: home) == "~")
+        #expect(ConversationExtractor.displayName(root: "/Users/maba.reentax/a", home: home) == "/Users/maba.reentax/a")
+        #expect(ConversationExtractor.displayName(root: "/private/tmp", home: home) == "/private/tmp")
+    }
+}

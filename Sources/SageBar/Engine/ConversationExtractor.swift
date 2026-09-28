@@ -26,7 +26,7 @@ enum ConversationExtractor {
     static func projectDirs() -> [URL] {
         let fm = FileManager.default
         guard let projects = try? fm.contentsOfDirectory(at: projectsDir, includingPropertiesForKeys: nil) else { return [] }
-        let ownDir = Paths.logs.path.replacingOccurrences(of: "[^A-Za-z0-9]", with: "-", options: .regularExpression)
+        let ownDir = mangle(Paths.logs.path)
         return projects.filter {
             (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true && $0.lastPathComponent != ownDir
         }.sorted { $0.lastPathComponent < $1.lastPathComponent }
@@ -56,26 +56,53 @@ enum ConversationExtractor {
         var id: String { folder }
     }
 
-    /// 설정 화면용: 프로젝트마다 최근 발화 수와 마지막 날짜. 제외 여부와 상관없이 전부 보여 준다.
+    /// 설정 화면용: 프로젝트마다 최근 발화 수와 마지막 날짜. 제외 여부와 상관없이 대화 파일이 있는 폴더는 전부 보여 준다.
     static func projectSummaries(days: Int = AppSettings.recentDays) -> [ProjectSummary] {
         let cutoff = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-Double(days) * 86400))
-        let rows = utterances(in: jsonlFiles(excluding: []))
+        // 대화 파일이 하나도 없는 폴더(memory만 있는 등)는 읽을 것이 없으니 목록에서 뺀다
+        let files = jsonlFiles(excluding: [])
+        let (rows, roots) = scan(files)
         var byFolder: [String: [Utterance]] = [:]
         for r in rows { byFolder[r.folder, default: []].append(r) }
-        return projectDirs().map { dir in
+        let withFiles = Set(files.map { $0.deletingLastPathComponent().lastPathComponent })
+        return projectDirs().filter { withFiles.contains($0.lastPathComponent) }.map { dir in
             let items = byFolder[dir.lastPathComponent] ?? []
             return ProjectSummary(folder: dir.lastPathComponent,
-                                  name: cleanProjectName(dir.lastPathComponent),
+                                  name: projectName(folder: dir.lastPathComponent, root: roots[dir.lastPathComponent]),
                                   recentCount: items.filter { $0.timestamp >= cutoff }.count,
                                   lastDate: items.last.map { String($0.timestamp.prefix(10)) } ?? "")
         }
         .sorted { ($0.lastDate, $0.name) > ($1.lastDate, $1.name) }
     }
 
-    /// "-Users-me-work-foo" → "work-foo" (홈 디렉터리 부분을 떼어 낸다).
-    /// Claude Code는 경로의 영숫자 아닌 글자(/ . _ 공백 등)를 모두 "-"로 바꿔 폴더 이름을 만든다.
+    /// Claude Code가 작업 경로로 폴더 이름을 만드는 방식: 영숫자 아닌 글자(/ . _ 공백 한글 등)를 모두 "-"로.
+    static func mangle(_ path: String) -> String {
+        path.replacingOccurrences(of: "[^A-Za-z0-9]", with: "-", options: .regularExpression)
+    }
+
+    /// 대화 기록 줄에 적힌 작업 경로(cwd)들 가운데 폴더 이름과 똑같이 바뀌는 것이 그 프로젝트의 뿌리다.
+    /// (세션 안에서 하위 폴더로 옮겨 다니면 cwd가 여럿이 된다.) 맞는 것이 없으면 — 작업 폴더 이름을 나중에 바꾼 경우 —
+    /// 가장 짧은 경로를 쓴다.
+    static func pickRoot(folder: String, candidates: some Collection<String>) -> String? {
+        candidates.first { mangle($0) == folder }
+            ?? candidates.min { ($0.count, $0) < ($1.count, $1) }
+    }
+
+    /// 보여 줄 이름: 홈 아래면 "~/…", 아니면 절대 경로 그대로
+    static func displayName(root: String, home: String = NSHomeDirectory()) -> String {
+        if root == home { return "~" }
+        if root.hasPrefix(home + "/") { return "~" + root.dropFirst(home.count) }
+        return root
+    }
+
+    /// 실제 경로를 찾았으면 그것을, 못 찾았으면 폴더 이름에서 홈 부분만 뗀 것을
+    static func projectName(folder: String, root: String?) -> String {
+        root.map { displayName(root: $0) } ?? cleanProjectName(folder)
+    }
+
+    /// "-Users-me-work-foo" → "work-foo" (홈 디렉터리 부분을 떼어 낸다). 실제 경로(cwd)를 못 찾았을 때의 대체 이름.
     static func cleanProjectName(_ dirname: String, home: String = NSHomeDirectory()) -> String {
-        let homePrefix = home.replacingOccurrences(of: "[^A-Za-z0-9]", with: "-", options: .regularExpression)
+        let homePrefix = mangle(home)
         guard dirname.hasPrefix(homePrefix) else { return dirname }
         let rest = dirname.dropFirst(homePrefix.count).drop { $0 == "-" }
         return rest.isEmpty ? "~" : String(rest)
@@ -110,17 +137,21 @@ enum ConversationExtractor {
 
     static func allUtterances() -> [Utterance] { utterances(in: jsonlFiles()) }
 
-    static func utterances(in files: [URL]) -> [Utterance] {
+    static func utterances(in files: [URL]) -> [Utterance] { scan(files).rows }
+
+    /// 발화를 모으면서 폴더마다 실제 작업 경로(뿌리)도 찾는다. 발화의 project는 뿌리를 찾았으면 "~/…" 경로로.
+    static func scan(_ files: [URL]) -> (rows: [Utterance], roots: [String: String]) {
         var rows: [Utterance] = []
+        var cwds: [String: Set<String>] = [:]
         for file in files {
             let folder = file.deletingLastPathComponent().lastPathComponent
-            let project = cleanProjectName(folder)
             guard let data = try? Data(contentsOf: file) else { continue }
             let text = String(decoding: data, as: UTF8.self)
             for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
                 guard let d = line.data(using: .utf8),
-                      let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
-                      (obj["type"] as? String) == "user",
+                      let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any] else { continue }
+                if let cwd = obj["cwd"] as? String, !cwd.isEmpty { cwds[folder, default: []].insert(cwd) }
+                guard (obj["type"] as? String) == "user",
                       (obj["isSidechain"] as? Bool) != true else { continue }
                 let msg = obj["message"] as? [String: Any] ?? [:]
                 let ts = obj["timestamp"] as? String ?? ""
@@ -128,12 +159,16 @@ enum ConversationExtractor {
                     let t = shrinkImageTags(raw.trimmingCharacters(in: .whitespacesAndNewlines))
                     if shouldSkip(t) { continue }
                     let cut = truncate(t)
-                    if !cut.isEmpty { rows.append(Utterance(timestamp: ts, project: project, folder: folder, text: cut)) }
+                    if !cut.isEmpty { rows.append(Utterance(timestamp: ts, project: "", folder: folder, text: cut)) }
                 }
             }
         }
+        var roots: [String: String] = [:]
+        for (folder, set) in cwds { roots[folder] = pickRoot(folder: folder, candidates: set) }
+        rows = rows.map { Utterance(timestamp: $0.timestamp, project: projectName(folder: $0.folder, root: roots[$0.folder]),
+                                    folder: $0.folder, text: $0.text) }
         rows.sort { $0.timestamp < $1.timestamp }
-        return rows
+        return (rows, roots)
     }
 
     struct PlanSummary { let mtime: String; let file: String; let title: String; let firstParagraph: String }
