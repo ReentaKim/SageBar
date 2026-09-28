@@ -174,6 +174,7 @@ body { display:flex; align-items:center; justify-content:center; min-height:100v
     <div class="row"><span>연속</span><b id="st-streak"></b></div>
     <div class="row"><span>실천 확인</span><b id="st-mood"></b></div>
     <div class="bar"><i id="st-moodbar"></i></div>
+    <div class="row"><span>직접 표시한 실천</span><b id="st-done"></b></div>
     <div class="row"><span>찔렸다 · 뻔했다 · 달랐다</span><b id="st-fb"></b></div>
     <div class="who" id="st-who"></div>
   </div>
@@ -320,6 +321,7 @@ document.getElementById('st-total').textContent = STATS.total + '통';
 document.getElementById('st-streak').textContent = STATS.streak + '일';
 document.getElementById('st-mood').textContent = STATS.moodTotal ? `${STATS.moodPleased}/${STATS.moodTotal}` : '—';
 document.getElementById('st-moodbar').style.width = (STATS.moodTotal ? STATS.moodPleased / STATS.moodTotal * 100 : 0) + '%';
+document.getElementById('st-done').textContent = STATS.actTotal ? `${STATS.actDone}/${STATS.actTotal}` : '—';
 document.getElementById('st-fb').textContent = `${STATS.fb.sharp} · ${STATS.fb.dull} · ${STATS.fb.miss}`;
 document.getElementById('st-who').innerHTML = PERSONAS.map(p => `<span title="${p.name}">${p.name.slice(0, 2)} ${(STATS.perPersona[p.id] || { count: 0 }).count}</span>`).join('');
 

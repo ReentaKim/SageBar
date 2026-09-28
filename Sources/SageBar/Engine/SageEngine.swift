@@ -170,8 +170,8 @@ final class SageEngine: ObservableObject {
         }
     }
 
-    func rebuildProfile() async throws {
+    func rebuildProfile(fresh: Bool = false) async throws {
         let model = AppSettings.model
-        try await Task.detached(priority: .userInitiated) { try ProfileBuilder.build(model: model) }.value
+        try await Task.detached(priority: .userInitiated) { try ProfileBuilder.build(model: model, fresh: fresh) }.value
     }
 }

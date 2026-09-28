@@ -14,7 +14,13 @@ enum PromptBuilder {
         let who = PersonaID(rawValue: prev.persona)?.persona.displayName ?? prev.persona
         var s = "날짜: \(prev.date) / 지은 인물: \(who) / 부제: \(prev.subtitle)\n권한 것:\n"
         if let acts = prev.actions, !acts.isEmpty {
-            s += acts.map { "- \($0)" }.joined(separator: "\n")
+            // 독자가 편지·메뉴에서 직접 한 표시. 한 번도 표시하지 않았으면 전부 "표시 없음"
+            let marks = prev.done
+            s += acts.enumerated().map { i, a in
+                let mark: String
+                if let marks, i < marks.count { mark = marks[i] ? "했음" : "표시 없음" } else { mark = "표시 없음" }
+                return "- \(a)  〔본인 표시: \(mark)〕"
+            }.joined(separator: "\n")
         } else {
             s += "(항목 기록이 없음 — 부제를 근거로 짧게만 점검한다)"
         }
@@ -36,6 +42,8 @@ enum PromptBuilder {
          "했다 / 시도 중 / 안 했다 / 기록으로는 알 수 없다" 가운데 하나로 정직하게 판정하고 근거 발화를 인용한다.
          **기록이 없다는 것만으로 "안 했다"로 판정하지 마라** — 그럴 때는 "기록으로는 알 수 없다"로 두고 판단을 유보한다.
          "안 했다"는 안 했음을 보여주는 발화(반대로 행동했거나 미룬다고 말한 것)가 있을 때만 쓴다.
+         항목 끝의 〔본인 표시: 했음〕은 독자가 직접 해냈다고 표시한 것이다 — 대화 기록에 흔적이 없어도 "했다"로 판정하고 믿어 준다.
+         〔본인 표시: 표시 없음〕은 아무 뜻도 없다(안 했다는 뜻이 아니다) — 그 항목은 위 기준대로 대화 기록으로만 판정한다.
          지어내지 마라. \(ask(length.followup))로 짧게 — 항목마다 한 문장이면 족하다. 지난 글이 다른 인물의 것이면 "지난번 \(PersonaID(rawValue: previous!.persona)?.persona.displayName ?? "")이(가) …"처럼
          그 인물을 밝힌다. 인물 어조를 유지하되, 잘한 것은 짧게 인정하고 안 한 것은 이유를 묻는다.
          구획 첫 줄에 종합 판정을 "FOLLOWUP_MOOD: pleased" (대체로 했다·시도 중) / "FOLLOWUP_MOOD: stern"

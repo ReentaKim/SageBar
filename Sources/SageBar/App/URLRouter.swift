@@ -2,7 +2,7 @@ import AppKit
 
 /// sagebar:// URL 처리 (Finder·터미널·브라우저에서 온 것과 편지 창 안 링크를 한곳에서)
 ///   sagebar://today · sagebar://regenerate[?persona=zhuge] · sagebar://archive · sagebar://settings
-///   sagebar://feedback?date=YYYY-MM-DD&value=sharp|dull
+///   sagebar://feedback?date=YYYY-MM-DD&value=sharp|dull|miss · sagebar://action?date=YYYY-MM-DD&i=0&done=1
 @MainActor
 enum URLRouter {
     static func handle(_ url: URL) {
@@ -30,6 +30,12 @@ enum URLRouter {
             }
             let ok = LetterStore.setFeedback(date: date, value: value)
             LetterStore.log("피드백 기록: \(date) → \(LetterStore.feedbackLabel(value) ?? value) (\(ok ? "저장" : "해당 날짜 없음"))")
+        case "action":
+            guard let date = query("date"), let i = query("i").flatMap(Int.init), let done = query("done") else {
+                LetterStore.log("실천 표시 URL 형식 오류"); return
+            }
+            let ok = LetterStore.setActionDone(date: date, index: i, done: done == "1")
+            LetterStore.log("실천 표시: \(date) #\(i + 1) → \(done == "1" ? "했다" : "지움") (\(ok ? "저장" : "해당 항목 없음"))")
         default:
             Task { await SageEngine.shared.showToday() }
         }

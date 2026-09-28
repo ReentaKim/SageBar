@@ -65,7 +65,7 @@ enum HTMLRenderer {
             "{{FOLLOWUP_HTML}}": followupHTML(letter, persona: persona),
             "{{FEEDBACK_HTML}}": feedbackHTML(date: dateStr),
             "{{CHAT_HTML}}": chatHTML(date: dateStr, persona: persona),
-            "{{ACTIONS_HTML}}": actionsHTML(letter, persona: persona),
+            "{{ACTIONS_HTML}}": actionsHTML(letter, persona: persona, date: dateStr),
         ]
         var html = template
         for (k, v) in replacements { html = html.replacingOccurrences(of: k, with: v) }
@@ -75,11 +75,19 @@ enum HTMLRenderer {
 
     // MARK: 지난 조언 점검 · 피드백
 
-    /// 오늘 권한 실천 항목 — 편지 끝에 번호 목록으로 (없으면 빈 문자열)
-    static func actionsHTML(_ letter: ParsedLetter, persona: Persona) -> String {
+    /// 오늘 권한 실천 항목 — 편지 끝에 번호 목록으로, 항목마다 "했다" 체크 칸 (없으면 빈 문자열).
+    /// 체크하면 sagebar://action 으로 앱에 알린다. 창을 다시 열 때는 앱이 sageActions.set 으로 최신 표시를 넣는다.
+    static func actionsHTML(_ letter: ParsedLetter, persona: Persona, date: String) -> String {
         guard !letter.actions.isEmpty else { return "" }
-        let items = letter.actions.map { "<li>\(HTMLEscape.escape($0))</li>" }.joined()
-        return "<div class=\"sage-actions\"><p class=\"sage-actions-title\">\(HTMLEscape.escape(persona.actionsTitle))</p><ol>\(items)</ol></div>"
+        let marks = LetterStore.actionMarks(date: date)
+        let items = letter.actions.enumerated().map { i, text in
+            let on = i < marks.count && marks[i]
+            return "<li class=\"sage-act\(on ? " is-done" : "")\"><label><input type=\"checkbox\" data-i=\"\(i)\"\(on ? " checked" : "")><span>\(HTMLEscape.escape(text))</span></label></li>"
+        }.joined()
+        return """
+        <div class="sage-actions" data-date="\(date)"><p class="sage-actions-title">\(HTMLEscape.escape(persona.actionsTitle))</p><ol>\(items)</ol>\
+        <p class="sage-actions-hint">해낸 것에 표시해 두면 다음 글에서 짚어 봅니다.</p></div>
+        """
     }
 
     static func hasUIFile(_ name: String) -> Bool {

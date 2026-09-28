@@ -6,9 +6,10 @@ struct SettingsView: View {
         TabView {
             GeneralSettings().tabItem { Label("일반", systemImage: "gear") }
             PersonaSettings().tabItem { Label("인물", systemImage: "person.3") }
+            ScopeSettings().tabItem { Label("읽는 범위", systemImage: "eye") }
             AdvancedSettings().tabItem { Label("고급", systemImage: "wrench.and.screwdriver") }
         }
-        .frame(width: 480, height: 400)
+        .frame(width: 480, height: 460)
     }
 }
 
@@ -113,6 +114,81 @@ struct PersonaSettings: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: 읽는 범위
+
+struct ScopeSettings: View {
+    @AppStorage(SettingsKey.excludedProjects) private var excludedRaw = ""
+    @AppStorage(SettingsKey.includePlans) private var includePlans = true
+    @AppStorage(SettingsKey.recentDays) private var recentDays = 14
+    @State private var projects: [ConversationExtractor.ProjectSummary]?
+    @State private var changed = false
+    @State private var profileBusy = false
+    @State private var profileMessage: String?
+
+    private var excluded: Set<String> { Set(excludedRaw.split(separator: "\n").map(String.init)) }
+    private func setIncluded(_ folder: String, _ on: Bool) {
+        var set = excluded
+        if on { set.remove(folder) } else { set.insert(folder) }
+        excludedRaw = set.sorted().joined(separator: "\n")
+        changed = true
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                if let projects {
+                    if projects.isEmpty {
+                        Text("아직 Claude Code 대화 기록이 없습니다.").foregroundStyle(.secondary)
+                    }
+                    ForEach(projects) { p in
+                        Toggle(isOn: Binding(get: { !excluded.contains(p.folder) }, set: { setIncluded(p.folder, $0) })) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(p.name).font(.body).lineLimit(1).truncationMode(.middle)
+                                Text(p.lastDate.isEmpty ? "발화 없음" : "최근 \(recentDays)일 \(p.recentCount)건 · 마지막 \(p.lastDate)")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } else {
+                    HStack { ProgressView().controlSize(.small); Text("대화 기록을 살피는 중…").foregroundStyle(.secondary) }
+                }
+            } header: {
+                Text("현자가 읽을 프로젝트")
+            } footer: {
+                Text("끈 프로젝트의 대화는 편지·인물지·답장 어디에도 쓰지 않습니다. 회사 일처럼 조언에 섞이면 안 되는 폴더를 끄세요.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                Toggle("계획 문서(~/.claude/plans)도 읽기", isOn: $includePlans)
+                    .onChange(of: includePlans) { _, _ in changed = true }
+            }
+            if changed {
+                Section {
+                    HStack {
+                        Text("이미 지은 인물지에는 뺀 내용이 남아 있을 수 있습니다.").font(.caption)
+                        Spacer()
+                        Button(profileBusy ? "짓는 중…" : "인물지 새로 짓기") {
+                            profileBusy = true; profileMessage = nil
+                            Task {
+                                do { try await SageEngine.shared.rebuildProfile(fresh: true); profileMessage = "새로 지었습니다."; changed = false }
+                                catch { profileMessage = error.localizedDescription }
+                                profileBusy = false
+                            }
+                        }
+                        .disabled(profileBusy)
+                    }
+                    if let m = profileMessage { Text(m).font(.caption) }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .task {
+            let days = recentDays
+            projects = await Task.detached { ConversationExtractor.projectSummaries(days: days) }.value
+        }
     }
 }
 

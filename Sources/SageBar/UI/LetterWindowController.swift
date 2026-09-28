@@ -145,6 +145,22 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
         webView.evaluateJavaScript("\(function)(\(json.dropFirst().dropLast()))", completionHandler: nil)
     }
 
+    /// 편지를 열 때마다 저장된 실천 표시를 넣는다 (HTML은 지을 때 고정이라 그 뒤 표시가 반영돼 있지 않다)
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard let url = webView.url, url.isFileURL else { return }
+        let date = url.deletingPathExtension().lastPathComponent
+        guard date.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else { return }
+        refreshActionMarks(date: date)
+    }
+
+    /// 메뉴에서 표시를 바꿨을 때도 부른다
+    func refreshActionMarks(date: String) {
+        guard webView.url?.deletingPathExtension().lastPathComponent == date else { return }
+        let marks = LetterStore.actionMarks(date: date)
+        guard let data = try? JSONEncoder().encode(marks), let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("window.sageActions && sageActions.set(\(json))", completionHandler: nil)
+    }
+
     // 편지 안의 링크(지난 글, 목록)는 창 안에서, 외부 링크는 브라우저로
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

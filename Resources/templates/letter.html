@@ -77,6 +77,19 @@ function sagePrint() {
     });
   });
 })();
+// 실천 체크: 표시하면 sagebar://action 으로 앱에 기록한다. 앱은 창을 열 때 sageActions.set([...]) 으로 최신 표시를 넣는다.
+var sageActions = (function () {
+  var box = document.querySelector('.sage-actions[data-date]'); if (!box) return null;
+  var boxes = box.querySelectorAll('input[type=checkbox]');
+  function paint(cb) { cb.closest('.sage-act').classList.toggle('is-done', cb.checked); }
+  boxes.forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      paint(cb);
+      location.href = 'sagebar://action?date=' + box.dataset.date + '&i=' + cb.dataset.i + '&done=' + (cb.checked ? 1 : 0);
+    });
+  });
+  return { set: function (marks) { boxes.forEach(function (cb, i) { cb.checked = !!marks[i]; paint(cb); }); } };
+})();
 // 답장 칸: 보내면 앱(webkit.messageHandlers.sage)이 claude 로 답을 지어 sageChat.receive / fail 로 돌려준다
 var sageChat = (function () {
   var box = document.querySelector('.sage-chat'); if (!box) return null;

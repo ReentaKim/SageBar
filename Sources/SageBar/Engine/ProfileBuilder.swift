@@ -64,14 +64,15 @@ enum ProfileBuilder {
     }
 
     /// 인물지를 (처음) 짓거나 갱신한다. 블로킹 — 백그라운드에서 부른다.
-    static func build(model: ClaudeModel) throws {
+    /// fresh면 옛 인물지를 참고하지 않고 처음부터 짓는다 (읽는 범위에서 뺀 프로젝트 내용이 남지 않도록).
+    static func build(model: ClaudeModel, fresh: Bool = false) throws {
         let today = LetterStore.dateString()
         let all = ConversationExtractor.allMarkdown()
         let existing = try? String(contentsOf: Paths.profile, encoding: .utf8)
-        let prompt = existing.map { updatePrompt(existing: $0, all: all, today: today) }
+        let prompt = (fresh ? nil : existing).map { updatePrompt(existing: $0, all: all, today: today) }
             ?? initialPrompt(all: all, today: today)
 
-        LetterStore.log("[profile] \(existing == nil ? "최초 작성" : "갱신") 시작 (모델: \(model.rawValue))")
+        LetterStore.log("[profile] \(existing == nil ? "최초 작성" : fresh ? "새로 짓기" : "갱신") 시작 (모델: \(model.rawValue))")
         let result = try ClaudeCLI.run(prompt: prompt, model: model)
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > 300, trimmed.contains("인물지") else {
