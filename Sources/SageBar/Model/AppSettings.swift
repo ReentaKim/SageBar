@@ -17,13 +17,21 @@ enum LetterLength: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .short: return "짧게 (약 3,000자)"
-        case .normal: return "보통 (약 5,000자)"
-        case .long: return "길게 (약 7,500자)"
+        case .short: return "짧게 (약 1,000자 · 2분)"
+        case .normal: return "보통 (약 1,500자 · 3분)"
+        case .long: return "길게 (약 2,000자 · 4분)"
         }
     }
-    var minUpper: Int { switch self { case .short: return 1200; case .normal: return 2000; case .long: return 3000 } }
-    var minLower: Int { switch self { case .short: return 1800; case .normal: return 3000; case .long: return 4500 } }
+    // 아침에 다 읽을 수 있는 양 — 점검·상편·하편·맺음을 합친 글자 수 (실천 세 가지·한 구절은 세지 않음)
+    var total: Int { switch self { case .short: return 1000; case .normal: return 1500; case .long: return 2000 } }
+    var followup: Int { switch self { case .short: return 150; case .normal: return 200; case .long: return 250 } }
+    var upper: Int { switch self { case .short: return 350; case .normal: return 550; case .long: return 750 } }
+    var lower: Int { upper }
+    var closing: Int { switch self { case .short: return 100; case .normal: return 150; case .long: return 200 } }
+    var subheads: String { switch self { case .short: return "1개"; case .normal: return "2개"; case .long: return "2~3개" } }
+    var minutes: Int { switch self { case .short: return 2; case .normal: return 3; case .long: return 4 } }
+    /// 첫 편지(점검 구획 없음)는 점검 몫을 뺀다
+    func target(hasFollowup: Bool) -> Int { hasFollowup ? total : total - followup }
 }
 
 enum ClaudeModel: String, CaseIterable, Identifiable {

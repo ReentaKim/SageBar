@@ -32,7 +32,9 @@ Every morning at a time you choose, one of four sages reads **what you actually 
 |---|---|---|
 | **Topic** | How to use your AI coding tool better | Direction for your work and life |
 | **Grounded in** | Your real prompts and recurring habits | Projects, worries and relationships that surface in your conversations |
-| **Length** | ~2,000 chars | ~3,000 chars |
+| **Length** | ~550 chars | ~550 chars |
+
+With the follow-up check and closing, a whole letter is about 1,500 characters — a three-minute morning read.
 
 The letter's headline is the day's key advice in one sentence, and it closes with three numbered things to do today. No generic advice. The sage quotes you back to yourself: "you asked the same config question three times this week", "your work is scattered across 26 folders".
 
@@ -145,7 +147,7 @@ Headless test from a terminal:
 
 **Can I use it without Claude Code?** Not yet — both the history and the generation come from it. An API-key mode is being considered.
 
-**Letters are too long / short.** Settings › General › Length. Short is ~3,000 chars, long ~7,500.
+**Letters are too long / short.** Settings › General › Length. Counting everything you read (check, both parts, closing): short ~1,000 chars (2 min), normal ~1,500 (3 min), long ~2,000 (4 min).
 
 **The window didn't show this morning.** Check the status line in the menu and the log under Settings › Advanced. If the Mac was asleep at show time, it opens shortly after wake.
 
