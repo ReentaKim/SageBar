@@ -24,9 +24,12 @@ enum ConversationExtractor {
     static func jsonlFiles() -> [URL] {
         let fm = FileManager.default
         guard let projects = try? fm.contentsOfDirectory(at: projectsDir, includingPropertiesForKeys: nil) else { return [] }
+        // SageBar 자신이 claude -p 를 부른 세션(작업 폴더 = Paths.logs)은 사용자 발화가 아니다
+        let ownDir = Paths.logs.path.replacingOccurrences(of: "[^A-Za-z0-9]", with: "-", options: .regularExpression)
         var out: [URL] = []
         for p in projects {
             guard (try? p.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
+            if p.lastPathComponent == ownDir { continue }
             let files = (try? fm.contentsOfDirectory(at: p, includingPropertiesForKeys: nil)) ?? []
             out += files.filter { $0.pathExtension == "jsonl" }
         }

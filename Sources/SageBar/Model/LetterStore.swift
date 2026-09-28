@@ -11,6 +11,7 @@ enum Paths {
     static var logs: URL { appSupport.appendingPathComponent("logs", isDirectory: true) }
     static var assets: URL { appSupport.appendingPathComponent("assets", isDirectory: true) }
     static var profileHistory: URL { appSupport.appendingPathComponent("profile-history", isDirectory: true) }
+    static var chats: URL { appSupport.appendingPathComponent("chats", isDirectory: true) }
     static var profile: URL { appSupport.appendingPathComponent("profile.md") }
     static var recent: URL { appSupport.appendingPathComponent("recent.md") }
     static var history: URL { appSupport.appendingPathComponent("history.jsonl") }
@@ -19,7 +20,7 @@ enum Paths {
     static var indexPage: URL { letters.appendingPathComponent("index.html") }
 
     static func ensure() {
-        for dir in [appSupport, letters, raw, logs, assets, profileHistory] {
+        for dir in [appSupport, letters, raw, logs, assets, profileHistory, chats] {
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         }
     }
@@ -49,6 +50,14 @@ struct HistoryEntry: Codable {
     var actions: [String]? = nil     // 그날 권한 실천 항목 (다음 날 점검 근거)
     var feedback: String? = nil      // "sharp"(찔렸다) / "dull"(뻔했다) / "miss"(내 얘기와 달랐다)
     var mood: String? = nil          // 지난 조언 점검 판정 pleased / stern / neutral
+}
+
+/// 편지 아래 답장 칸에서 주고받은 말 한 마디
+struct ChatMessage: Codable {
+    let role: String        // "me"(독자) / "sage"(현자)
+    let persona: String
+    let text: String
+    let at: String          // ISO8601
 }
 
 enum LetterStore {
@@ -162,6 +171,48 @@ enum LetterStore {
 
     static func personaForDate(_ date: String) -> PersonaID? {
         history().first { $0.date == date }.flatMap { PersonaID(rawValue: $0.persona) }
+    }
+
+    // MARK: 답장 대화 — chats/YYYY-MM-DD.json
+    static func chatURL(for date: String) -> URL { Paths.chats.appendingPathComponent("\(date).json") }
+
+    static func chat(for date: String) -> [ChatMessage] {
+        guard let data = try? Data(contentsOf: chatURL(for: date)) else { return [] }
+        return (try? JSONDecoder().decode([ChatMessage].self, from: data)) ?? []
+    }
+
+    static func appendChat(date: String, _ message: ChatMessage) {
+        var all = chat(for: date)
+        all.append(message)
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.prettyPrinted, .withoutEscapingSlashes]
+        if let data = try? enc.encode(all) { try? data.write(to: chatURL(for: date), options: .atomic) }
+    }
+
+    /// 같은 날 다시 지을 때 옛 대화를 치워 둔다 (다른 편지 밑에 붙지 않게, 지우지는 않음)
+    static func archiveChat(for date: String) {
+        let src = chatURL(for: date)
+        guard FileManager.default.fileExists(atPath: src.path) else { return }
+        let f = DateFormatter(); f.dateFormat = "HHmmss"
+        let dst = Paths.chats.appendingPathComponent("\(date)-\(f.string(from: Date())).bak.json")
+        try? FileManager.default.moveItem(at: src, to: dst)
+        log("대화 치움: \(src.lastPathComponent) → \(dst.lastPathComponent)")
+    }
+
+    /// 프롬프트용 대화 기록. 길면 앞쪽을 잘라 최근 말을 남긴다.
+    static func chatTranscript(for date: String, maxChars: Int = 3000) -> String {
+        let msgs = chat(for: date)
+        guard !msgs.isEmpty else { return "" }
+        var lines: [String] = []
+        var total = 0
+        for m in msgs.reversed() {
+            let who = m.role == "me" ? "상대" : (PersonaID(rawValue: m.persona)?.persona.displayName ?? "현자")
+            let line = "\(who): \(m.text)"
+            if total + line.count > maxChars, !lines.isEmpty { lines.append("(앞선 대화 생략)"); break }
+            lines.append(line)
+            total += line.count
+        }
+        return lines.reversed().joined(separator: "\n")
     }
 
     // MARK: 자산 동기화 — 스타일·폰트·인장을 데이터 폴더로 복사 (편지가 앱 위치와 무관하게 열리도록)

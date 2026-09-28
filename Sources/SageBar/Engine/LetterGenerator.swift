@@ -34,12 +34,13 @@ struct LetterGenerator {
         let topics = LetterStore.recentTopics()
         let previous = LetterStore.previousEntry(before: dateStr)
         let feedback = LetterStore.feedbackSummary()
+        let chat = previous.map { LetterStore.chatTranscript(for: $0.date) } ?? ""
 
         // 3) 짓기 (분량 미달이면 1회 재시도)
         onStage("\(persona.displayName)이(가) 글을 짓는 중")
         let prompt = PromptBuilder.letterPrompt(persona: persona, profile: profile, recent: recent,
                                                 recentTopics: topics, date: date, length: length, recentDays: recentDays,
-                                                previous: previous, feedback: feedback)
+                                                previous: previous, feedback: feedback, chat: chat)
         var raw = try ClaudeCLI.run(prompt: prompt, model: model)
         try? raw.write(to: LetterStore.rawURL(for: dateStr), atomically: true, encoding: .utf8)
         var parsed = try LetterParser.parse(raw)
@@ -61,10 +62,13 @@ struct LetterGenerator {
 
         // 4) 엮기
         onStage("두루마리에 옮기는 중")
+        // 같은 날짜를 다시 지으면 옛 편지에 대한 대화는 치워 둔다 (새 편지 밑에 붙지 않게)
+        if LetterStore.hasLetter(for: dateStr) { LetterStore.archiveChat(for: dateStr) }
         let url = try HTMLRenderer.render(letter: parsed, persona: persona, date: date, model: model)
         LetterStore.appendHistory(HistoryEntry(date: dateStr, persona: id.rawValue, subtitle: parsed.subtitle,
                                                actions: parsed.actions.isEmpty ? nil : parsed.actions,
                                                mood: parsed.followupMood.isEmpty ? nil : parsed.followupMood))
+        if !chat.isEmpty { LetterStore.log("[\(id.rawValue)] 지난 글 뒤 대화 \(chat.count)자 이어받음") }
         if previous != nil { LetterStore.log("[\(id.rawValue)] 지난 조언 점검 \(parsed.followup.isEmpty ? "없음" : "\(LetterParser.charCount(parsed.followup))자"), 실천 항목 \(parsed.actions.count)개") }
         LetterStore.renderIndex()
         LetterStore.log("[\(id.rawValue)] 완료: \(url.lastPathComponent) (\(parsed.upperCount)/\(parsed.lowerCount)/\(parsed.totalCount)자, 분량 \(parsed.meetsLength(length) ? "충족" : (parsed.nearlyMeetsLength(length) ? "근접" : "미달")))")

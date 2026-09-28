@@ -23,7 +23,7 @@ enum PromptBuilder {
 
     static func letterPrompt(persona: Persona, profile: String, recent: String, recentTopics: String,
                              date: Date, length: LetterLength, recentDays: Int,
-                             previous: HistoryEntry? = nil, feedback: String = "") -> String {
+                             previous: HistoryEntry? = nil, feedback: String = "", chat: String = "") -> String {
         let today = LetterStore.dateString(date)
         let upperTarget = length.minUpper + 200
         let lowerTarget = length.minLower + 200
@@ -38,7 +38,11 @@ enum PromptBuilder {
          그 인물을 밝힌다. 인물 어조를 유지하되, 잘한 것은 짧게 인정하고 안 한 것은 이유를 묻는다.
          구획 첫 줄에 종합 판정을 "FOLLOWUP_MOOD: pleased" (대체로 했다·시도 중) / "FOLLOWUP_MOOD: stern"
          (안 했음이 발화로 확인됨) / "FOLLOWUP_MOOD: neutral" (알 수 없다·반반 — 기본값) 가운데 하나로 적고,
-         그 다음 줄부터 본문을 쓴다. stern은 근거가 있을 때만 쓴다.)
+         그 다음 줄부터 본문을 쓴다. stern은 근거가 있을 때만 쓴다.\(chat.isEmpty ? "" : """
+
+         아래 "지난 글 뒤에 나눈 대화"가 있으니, 점검 구획 첫머리에서 상대가 그 대화에서 한 말을 받아
+         한두 문장으로 답한 뒤 점검에 들어간다. 대화 속 약속·사정(예: "오늘은 못 하겠다")도 판정 근거로 쓴다.
+        """))
 
         """
         return """
@@ -61,7 +65,11 @@ enum PromptBuilder {
         ────────── 지난 글의 권고 (오늘 점검할 것) ──────────
         \(previousSection(previous))
 
-        ────────── 독자의 반응 (편지 아래 버튼으로 남긴 것) ──────────
+        \(chat.isEmpty ? "" : """
+        ────────── 지난 글 뒤에 나눈 대화 (상대가 편지 아래 답장 칸에 쓴 것과 그에 대한 답) ──────────
+        \(chat)
+
+        """)────────── 독자의 반응 (편지 아래 버튼으로 남긴 것) ──────────
         \(feedback.isEmpty ? "(아직 없음)" : feedback)
         - "뻔했다"가 많으면: 일반론을 줄이고 상대의 실제 발화 인용을 늘리며, 지난 글들과 다른 각도를 잡는다.
         - "찔렸다"가 많으면: 그 직설의 수위와 구체성을 유지한다.
@@ -120,6 +128,39 @@ enum PromptBuilder {
         지난 번 답변은 분량이 모자랐다. 첫 부분은 \(length.minUpper + 400)자, 둘째 부분은 \(length.minLower + 400)자를
         반드시 넘기도록 각 소제목마다 구체적 사례·근거를 한 단락씩 더 보태어 다시 지어라.
         구획 표시 형식은 동일하게 지켜라.
+        """
+    }
+
+    /// 편지 아래 답장 칸의 한 턴. 턴마다 편지 원문과 지금까지의 대화를 통째로 넘긴다(세션 없음).
+    static func chatPrompt(persona: Persona, profile: String, letter: String, transcript: String,
+                           message: String, date: String) -> String {
+        """
+        \(persona.voiceGuide)
+
+        ────────── 지금 상황 ──────────
+        \(date) 아침 당신이 상대에게 위의 문체로 글을 보냈고, 상대가 그 글을 읽고 답장을 보내 대화하는 중이다.
+        이번에는 긴 글이 아니라 **대화로** 답한다. 같은 인물, 같은 말투를 유지하되 상대의 말에 곧바로 응한다.
+
+        ────────── 상대에 대해 파악된 것 (인물지) ──────────
+        \(profile)
+
+        ────────── 오늘 아침 보낸 글 (원문) ──────────
+        \(letter.isEmpty ? "(원문을 찾지 못함)" : letter)
+
+        ────────── 지금까지의 대화 ──────────
+        \(transcript.isEmpty ? "(첫 답장)" : transcript)
+
+        ────────── 상대가 방금 보낸 말 ──────────
+        \(message)
+
+        ────────── 규칙 ──────────
+        - 200~500자. 상대가 짧게 물으면 더 짧게 답해도 좋다. 소제목·구획 표시·목록 기호를 쓰지 않는다.
+        - 상대를 "\(persona.addressee)"라고 부른다(인물지에 이름·직함이 있으면 그것도 좋다).
+        - 인물지·오늘 글·대화에 없는 사실을 지어내지 않는다. 짐작이면 짐작임을 드러낸다.
+        - 비위를 맞추려 앞서 한 조언을 쉽게 뒤집지 않는다. 상대의 사정이 타당하면 조언을 조정하되 이유를 말한다.
+        - 상대가 무엇을 하기로 하면, 그것을 한 줄로 되짚어 약속으로 받아 둔다(내일 글에서 점검한다).
+        - **한자 글자는 단 한 글자도 쓰지 마라.** 한자어는 한글로 적는다. 로마자·그리스 문자도 쓰지 않는다.
+        - 답의 본문만 쓴다. 인물 이름표·따옴표·안내문을 덧붙이지 않는다.
         """
     }
 }
