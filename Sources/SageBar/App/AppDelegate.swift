@@ -4,6 +4,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         LetterStore.log("SageBar 시작 (v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"))")
         StatusBarController.shared.install()
+        UpdateChecker.shared.start()
         if AppSettings.onboarded {
             SageEngine.shared.start()
         } else {

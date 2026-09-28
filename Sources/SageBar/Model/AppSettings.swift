@@ -59,6 +59,7 @@ enum SettingsKey {
     static let onboarded = "onboarded"
     static let recentDays = "recentDays"
     static let profileUpdatedAt = "profileUpdatedAt"
+    static let checkUpdates = "checkUpdates"
 }
 
 enum AppSettings {
@@ -78,6 +79,7 @@ enum AppSettings {
             SettingsKey.onboarded: false,
             SettingsKey.recentDays: 14,
             SettingsKey.profileUpdatedAt: "",
+            SettingsKey.checkUpdates: true,
         ])
     }
 
@@ -93,6 +95,7 @@ enum AppSettings {
     static var model: ClaudeModel { ClaudeModel(rawValue: d.string(forKey: SettingsKey.model) ?? "") ?? .opus }
     static var length: LetterLength { LetterLength(rawValue: d.string(forKey: SettingsKey.length) ?? "") ?? .normal }
     static var claudePath: String { d.string(forKey: SettingsKey.claudePath) ?? "" }
+    static var checkUpdates: Bool { d.bool(forKey: SettingsKey.checkUpdates) }
     static var recentDays: Int { max(1, d.integer(forKey: SettingsKey.recentDays)) }
 
     static var lastShownDate: String {

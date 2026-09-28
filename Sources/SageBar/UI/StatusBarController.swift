@@ -35,6 +35,23 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             .store(in: &cancellables)
     }
 
+    func refreshIcon() { updateIcon() }
+
+    /// 새 버전이 있으면 아이콘 오른쪽 아래에 작은 점을 찍는다 (템플릿이라 메뉴바 색을 따른다)
+    private func badged(_ base: NSImage?) -> NSImage? {
+        guard let base, UpdateChecker.shared.availableVersion != nil else { return base }
+        let size = base.size
+        let img = NSImage(size: size, flipped: false) { rect in
+            base.draw(in: rect)
+            let d: CGFloat = 6
+            NSColor.black.setFill()
+            NSBezierPath(ovalIn: NSRect(x: rect.maxX - d, y: 0, width: d, height: d)).fill()
+            return true
+        }
+        img.isTemplate = true
+        return img
+    }
+
     private func updateIcon() {
         guard let button = item?.button else { return }
         let engine = SageEngine.shared
@@ -76,9 +93,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 .withSymbolConfiguration(config) ?? NSImage(systemSymbolName: "scroll", accessibilityDescription: "SageBar")
         }
         image?.isTemplate = true
-        button.image = image
+        button.image = badged(image)
         button.appearsDisabled = engine.isGenerating
-        button.toolTip = engine.isGenerating ? "SageBar — 글을 짓는 중" : "SageBar — 현자의 아침"
+        let update = UpdateChecker.shared.availableVersion.map { " (새 버전 \($0))" } ?? ""
+        button.toolTip = (engine.isGenerating ? "SageBar — 글을 짓는 중" : "SageBar — 현자의 아침") + update
     }
 
     /// 가로 시트를 잘라 템플릿(검정+알파) 아이콘 프레임으로
@@ -109,6 +127,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         headerItem.view = header
         menu.addItem(headerItem)
         menu.addItem(.separator())
+        if let v = UpdateChecker.shared.availableVersion {
+            let mi = makeItem("새 버전 \(v)이 나왔습니다 — 올리는 방법", #selector(showUpdate), "")
+            mi.image = NSImage(systemSymbolName: "arrow.up.circle", accessibilityDescription: nil)
+            menu.addItem(mi)
+            menu.addItem(.separator())
+        }
 
         if onboarded {
             menu.addItem(makeItem("오늘의 조언 보기", #selector(showToday), "o"))
@@ -187,6 +211,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
     }
     @objc private func openDataFolder() { NSWorkspace.shared.open(Paths.appSupport) }
+    @objc private func showUpdate() { UpdateChecker.shared.showUpdateHelp() }
     @objc private func openGitHub() { NSWorkspace.shared.open(URL(string: "https://github.com/ReentaKim/SageBar")!) }
     @objc private func quit() { NSApp.terminate(nil) }
 }
