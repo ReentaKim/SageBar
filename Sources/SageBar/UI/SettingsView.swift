@@ -19,6 +19,7 @@ struct GeneralSettings: View {
     @AppStorage(SettingsKey.prebuildMinutes) private var prebuildMinutes = 20
     @AppStorage(SettingsKey.length) private var length = LetterLength.normal.rawValue
     @AppStorage(SettingsKey.model) private var model = ClaudeModel.opus.rawValue
+    @AppStorage(SettingsKey.checkUpdates) private var checkUpdates = true
     @State private var launchAtLogin = (SMAppService.mainApp.status == .enabled)
     @State private var loginError: String?
 
@@ -50,6 +51,10 @@ struct GeneralSettings: View {
                 }
             }
             Section("시작") {
+                Toggle("새 버전이 나오면 메뉴에 알리기", isOn: $checkUpdates)
+                    .onChange(of: checkUpdates) { _, on in
+                        if on { UpdateChecker.shared.check() } else { StatusBarController.shared.refreshIcon() }
+                    }
                 Toggle("로그인할 때 SageBar 자동 시작", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, on in
                         do {

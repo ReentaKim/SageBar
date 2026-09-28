@@ -90,6 +90,7 @@ By default they **rotate daily**. In Settings you can pin one, randomize, or exc
 ```sh
 brew install --cask reentakim/tap/sagebar
 ```
+When a new version is out, SageBar shows it at the top of the menu and with a small dot on the menu bar icon. Upgrade with `brew upgrade --cask sagebar`.
 
 **Manual**
 1. Download `SageBar-x.y.z.dmg` from the [latest release](https://github.com/ReentaKim/SageBar/releases/latest).
@@ -139,9 +140,9 @@ Headless test from a terminal:
 | `~/.claude/plans/*.md` | Plan titles and first paragraphs | Read only |
 | `~/Library/Application Support/SageBar/` | Profile, recent excerpts, letters (HTML), raw output, history, logs | All local. Delete with the app if you like. |
 
-- The app itself makes **no network requests**. The only outbound traffic is the single `claude` CLI call to Anthropic, whose prompt contains your profile and recent prompt excerpts — the same kind of content that already goes there when you use Claude Code.
+- Apart from a daily version check (below), the app itself makes **no network requests**. The other outbound traffic is the `claude` CLI call to Anthropic, whose prompt contains your profile and recent prompt excerpts — the same kind of content that already goes there when you use Claude Code.
 - The profile prompt forbids recording phone numbers, addresses, account numbers and the like, but anything you typed into a conversation may appear in the excerpts. You can open and edit the profile from Settings › Advanced.
-- No telemetry, analytics or update checks.
+- No telemetry, analytics or automatic installs. The version check is a daily request of the latest version number on GitHub (it sends nothing but a User-Agent with the app version; turn it off in Settings › General).
 
 ## FAQ
 

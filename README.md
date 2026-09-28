@@ -86,6 +86,7 @@
 ```sh
 brew install --cask reentakim/tap/sagebar
 ```
+새 버전이 나오면 메뉴 맨 위와 메뉴바 아이콘의 작은 점으로 알려 줍니다. 올릴 때는 `brew upgrade --cask sagebar`.
 
 **직접 설치**
 1. [최신 릴리스](https://github.com/ReentaKim/SageBar/releases/latest)에서 `SageBar-x.y.z.dmg`를 내려받습니다.
@@ -135,9 +136,9 @@ open dist/SageBar.app
 | `~/.claude/plans/*.md` | 계획 문서 제목과 첫 문단 | 읽기만 |
 | `~/Library/Application Support/SageBar/` | 인물지, 최근 발화 발췌, 지은 글(HTML), 원문, 이력, 로그 | 전부 로컬. 앱을 지우면 함께 지우셔도 됩니다. |
 
-- 앱 자체는 **네트워크 요청을 하지 않습니다.** 외부로 나가는 것은 `claude` CLI가 Anthropic에 보내는 프롬프트 한 번뿐이며, 그 프롬프트에는 인물지와 최근 발화 발췌가 들어갑니다. 즉 Claude Code를 쓸 때와 같은 곳으로 같은 종류의 내용이 갑니다.
+- 앱 자체의 네트워크 요청은 **하루 한 번 GitHub에서 최신 버전 번호를 확인하는 것 하나**뿐입니다(보내는 것은 앱 버전이 적힌 User-Agent뿐, 설정 › 일반에서 끌 수 있음). 그 밖에 외부로 나가는 것은 `claude` CLI가 Anthropic에 보내는 프롬프트 한 번뿐이며, 그 프롬프트에는 인물지와 최근 발화 발췌가 들어갑니다. 즉 Claude Code를 쓸 때와 같은 곳으로 같은 종류의 내용이 갑니다.
 - 인물지에는 전화번호·주소·계좌 같은 민감 정보를 적지 않도록 지시하지만, 대화에 그런 내용을 입력했다면 발췌에 남을 수 있습니다. 걱정되면 설정 › 고급에서 인물지를 열어 직접 고치세요.
-- 텔레메트리, 분석, 자동 업데이트 확인 없음.
+- 텔레메트리, 분석, 자동 설치 없음.
 
 ## 자주 묻는 질문
 

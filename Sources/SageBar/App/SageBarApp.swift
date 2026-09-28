@@ -24,7 +24,7 @@ struct SageBarApp: App {
 enum HeadlessCLI {
     static func runIfRequested() {
         let args = CommandLine.arguments
-        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") || args.contains("--debug-waiting") || args.contains("--chat") else { return }
+        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") || args.contains("--debug-waiting") || args.contains("--chat") || args.contains("--check-update") else { return }
 
         func value(after flag: String) -> String? {
             guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -96,6 +96,21 @@ enum HeadlessCLI {
                 LetterStore.renderIndex()
                 print(url.path)
                 exit(0)
+            }
+            // --check-update: GitHub 최신 릴리스와 지금 버전을 비교해 찍는다
+            if args.contains("--check-update") {
+                let sem = DispatchSemaphore(value: 0)
+                var line = ""
+                Task.detached {
+                    do {
+                        let (tag, url) = try await UpdateChecker.fetchLatest()
+                        let latest = UpdateChecker.normalize(tag), cur = UpdateChecker.currentVersion
+                        line = "최신 \(latest) / 현재 \(cur) → \(UpdateChecker.isNewer(latest, than: cur) ? "새 버전 있음" : "최신") (\(url))"
+                    } catch { line = "실패: \(error.localizedDescription)" }
+                    sem.signal()
+                }
+                sem.wait()
+                print(line); exit(0)
             }
             // --chat "말" [--date YYYY-MM-DD]: 그날 편지의 현자에게 답장을 보내고 답을 찍는다 (편지 창 없이 시험)
             if args.contains("--chat") {
