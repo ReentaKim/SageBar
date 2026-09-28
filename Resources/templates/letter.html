@@ -49,6 +49,7 @@
   </div>
 
   {{FEEDBACK_HTML}}
+  {{CHAT_HTML}}
   <div class="sage-controls">
     <button class="sage-btn" onclick="sagePrint()">보관 (인쇄・PDF)</button>
     {{PREV_LINK}}
@@ -75,6 +76,49 @@ function sagePrint() {
       mark(b.dataset.v);   // 링크 이동(sagebar://)은 그대로 진행 — 앱이 받아 기록한다
     });
   });
+})();
+// 답장 칸: 보내면 앱(webkit.messageHandlers.sage)이 claude 로 답을 지어 sageChat.receive / fail 로 돌려준다
+var sageChat = (function () {
+  var box = document.querySelector('.sage-chat'); if (!box) return null;
+  var handler = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.sage;
+  if (!handler) { box.classList.add('outside'); return null; }
+  var log = box.querySelector('.sage-chat-log'), input = box.querySelector('.sage-chat-input'),
+      send = box.querySelector('.sage-chat-send'), pending = null;
+  function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML.replace(/\n/g, '<br>'); }
+  function face(file) {
+    return file ? '<img class="sage-msg-face" src="../assets/characters/' + box.dataset.persona + '/' + file + '" alt="">' : '';
+  }
+  function add(role, text) {
+    var el = document.createElement('div');
+    el.className = 'sage-msg ' + role;
+    el.innerHTML = role === 'me' ? '<div class="sage-msg-text">' + esc(text) + '</div>'
+      : face(box.dataset.portrait ? 'portrait.png' : '') + '<div class="sage-msg-text"><span class="sage-msg-who">' + esc(box.dataset.name) + '</span>' + esc(text) + '</div>';
+    log.appendChild(el); el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    return el;
+  }
+  function lock(on) { input.disabled = on; send.disabled = on; box.classList.toggle('busy', on); }
+  function submit() {
+    var text = input.value.trim(); if (!text || send.disabled) return;
+    add('me', text); input.value = ''; lock(true);
+    pending = document.createElement('div');
+    pending.className = 'sage-msg sage pending';
+    pending.innerHTML = face(box.dataset.face) + '<div class="sage-msg-text"><span class="sage-msg-who">' + esc(box.dataset.name) + '</span>붓을 드는 중…</div>';
+    log.appendChild(pending); pending.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    handler.postMessage({ type: 'chat', date: box.dataset.date, text: text });
+  }
+  send.addEventListener('click', submit);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); submit(); }
+  });
+  function clearPending() { if (pending) { pending.remove(); pending = null; } }
+  return {
+    receive: function (text) { clearPending(); add('sage', text); lock(false); input.focus(); },
+    fail: function (msg) {
+      clearPending();
+      var el = document.createElement('p'); el.className = 'sage-chat-error'; el.textContent = msg;
+      log.appendChild(el); lock(false);
+    }
+  };
 })();
 </script>
 </body>

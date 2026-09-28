@@ -24,7 +24,7 @@ struct SageBarApp: App {
 enum HeadlessCLI {
     static func runIfRequested() {
         let args = CommandLine.arguments
-        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") || args.contains("--debug-waiting") else { return }
+        guard args.contains("--generate") || args.contains("--profile") || args.contains("--render-preview") || args.contains("--rerender") || args.contains("--debug-menu-header") || args.contains("--debug-waiting") || args.contains("--chat") else { return }
 
         func value(after flag: String) -> String? {
             guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -95,6 +95,14 @@ enum HeadlessCLI {
                                                   date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(), model: model)
                 LetterStore.renderIndex()
                 print(url.path)
+                exit(0)
+            }
+            // --chat "말" [--date YYYY-MM-DD]: 그날 편지의 현자에게 답장을 보내고 답을 찍는다 (편지 창 없이 시험)
+            if args.contains("--chat") {
+                guard let text = value(after: "--chat") else { note("--chat 뒤에 보낼 말을 적으세요."); exit(1) }
+                let dateStr = value(after: "--date") ?? LetterStore.dateString()
+                note("답장 보내는 중 (\(dateStr), \(ChatEngine.model.rawValue))…")
+                print(try ChatEngine.reply(date: dateStr, text: text))
                 exit(0)
             }
             if args.contains("--profile") || !ProfileBuilder.exists {

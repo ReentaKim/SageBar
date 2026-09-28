@@ -413,3 +413,38 @@ body {
 .sage-actions ol { margin: 0; padding-left: 1.4em; }
 .sage-actions li { margin: 0 0 6px; font-size: 16px; line-height: 1.7; color: var(--ink); text-indent: 0; }
 .sage-actions li::marker { color: var(--vermilion); font-weight: 700; }
+
+/* ── 답장 대화 (0.8.0): 종이 밖 어두운 배경 위에 한지 상자로 ── */
+.sage-chat {
+  margin: 22px 14px 0; padding: 16px 22px 14px;
+  background: var(--hanji); color: var(--ink);
+  border: 1px solid var(--gold); border-radius: 6px;
+  box-shadow: 0 6px 18px var(--paper-shadow);
+  font-size: 15px; line-height: 1.8;
+}
+.sage-chat-title { margin: 0 0 10px; font-size: 17px; color: var(--vermilion); }
+.sage-chat-log { display: flex; flex-direction: column; gap: 10px; }
+.sage-chat-log:empty { display: none; }
+.sage-msg { display: flex; gap: 10px; align-items: flex-start; max-width: 88%; }
+.sage-msg.me { align-self: flex-end; }
+.sage-msg.sage { align-self: flex-start; }
+.sage-msg-text { padding: 8px 14px; border-radius: 10px; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+.sage-msg.me .sage-msg-text { background: rgba(155, 34, 38, 0.10); border: 1px solid rgba(155, 34, 38, 0.35); }
+.sage-msg.sage .sage-msg-text { background: rgba(176, 141, 62, 0.10); border: 1px solid var(--gold); }
+.sage-msg-who { display: block; font-size: 12px; font-weight: 700; color: var(--vermilion); margin-bottom: 2px; }
+.sage-msg-face { width: 48px; height: 48px; flex-shrink: 0; image-rendering: pixelated; }
+.sage-msg.pending .sage-msg-text { opacity: .7; font-style: italic; }
+.sage-chat-form { display: flex; gap: 10px; align-items: flex-end; margin-top: 12px; }
+.sage-chat-input {
+  flex: 1; min-width: 0; resize: vertical; font: inherit; color: var(--ink);
+  background: transparent; border: 1px solid var(--gold); border-radius: 6px; padding: 8px 10px;
+}
+.sage-chat-input:focus { outline: 2px solid rgba(155, 34, 38, 0.35); outline-offset: 1px; }
+.sage-chat.busy .sage-chat-input, .sage-chat.busy .sage-chat-send { opacity: .55; }
+.sage-chat-note { margin: 6px 0 0; font-size: 12px; opacity: .7; }
+.sage-chat-error { margin: 0; font-size: 13px; color: var(--vermilion); }
+.sage-chat-outside { display: none; margin: 6px 0 0; font-size: 13px; opacity: .8; }
+.sage-chat.outside .sage-chat-form, .sage-chat.outside .sage-chat-note { display: none; }
+.sage-chat.outside .sage-chat-outside { display: block; }
+@media (max-width: 640px) { .sage-msg-face { display: none; } .sage-msg { max-width: 100%; } }
+@media print { .sage-chat-form, .sage-chat-note, .sage-chat-outside { display: none; } .sage-chat { box-shadow: none; } }

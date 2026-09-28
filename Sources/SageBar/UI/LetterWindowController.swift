@@ -11,6 +11,8 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
     private init() {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        let bridge = ScriptBridge()
+        config.userContentController.add(bridge, name: "sage")   // 편지 JS → 앱 (답장 칸)
         webView = WKWebView(frame: .zero, configuration: config)
         webView.setValue(false, forKey: "drawsBackground")
 
@@ -25,6 +27,7 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
         window.setFrameAutosaveName("SageBar.LetterWindow")
         window.contentView = webView
         super.init(window: window)
+        bridge.owner = self
         webView.navigationDelegate = self
         // 편지 안 스크립트가 "앱 안에서 열렸다"를 알 수 있게 (인쇄 버튼이 sagebar://print 로 보내도록)
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) SageBar"
@@ -120,6 +123,28 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
         webView.loadFileURL(Paths.indexPage, allowingReadAccessTo: Paths.appSupport)
     }
 
+    // MARK: 답장 대화 — JS가 보낸 말을 claude 로 넘기고 답을 페이지에 넣는다
+
+    fileprivate func handleScriptMessage(_ body: Any) {
+        guard let dict = body as? [String: Any], dict["type"] as? String == "chat",
+              let date = dict["date"] as? String, let text = dict["text"] as? String else { return }
+        Task {
+            do {
+                let answer = try await Task.detached(priority: .userInitiated) { try ChatEngine.reply(date: date, text: text) }.value
+                callJS("sageChat && sageChat.receive", answer)
+            } catch {
+                LetterStore.log("[chat] 실패: \(error.localizedDescription)")
+                callJS("sageChat && sageChat.fail", "답을 받지 못했습니다 — \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// 문자열 인자는 JSON 배열로 인코딩해 따옴표·줄바꿈을 안전하게 넘긴다
+    private func callJS(_ function: String, _ arg: String) {
+        guard let data = try? JSONEncoder().encode([arg]), let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("\(function)(\(json.dropFirst().dropLast()))", completionHandler: nil)
+    }
+
     // 편지 안의 링크(지난 글, 목록)는 창 안에서, 외부 링크는 브라우저로
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -134,5 +159,14 @@ final class LetterWindowController: NSWindowController, WKNavigationDelegate {
             return
         }
         decisionHandler(.allow)
+    }
+}
+
+/// WKUserContentController는 핸들러를 강하게 잡으므로, 창 컨트롤러 대신 약한 참조를 든 중계 객체를 등록한다
+@MainActor
+private final class ScriptBridge: NSObject, WKScriptMessageHandler {
+    weak var owner: LetterWindowController?
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        owner?.handleScriptMessage(message.body)
     }
 }

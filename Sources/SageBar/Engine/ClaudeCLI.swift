@@ -80,7 +80,8 @@ enum ClaudeCLI {
         }
         let p = Process()
         p.executableURL = exe
-        p.arguments = ["-p", "--model", model.rawValue, "--output-format", "text"]
+        // 세션 기록을 남기지 않는다 — 남기면 ~/.claude/projects 에 쌓여 ConversationExtractor가 SageBar 프롬프트를 사용자 발화로 읽는다
+        p.arguments = ["-p", "--model", model.rawValue, "--output-format", "text", "--no-session-persistence"]
         p.environment = environment()
         p.currentDirectoryURL = Paths.logs   // 프로젝트의 CLAUDE.md 등이 끼어들지 않는 빈 폴더
 

@@ -64,6 +64,7 @@ enum HTMLRenderer {
             "{{BACKDROP_CSS}}": backdropCSS(persona),
             "{{FOLLOWUP_HTML}}": followupHTML(letter, persona: persona),
             "{{FEEDBACK_HTML}}": feedbackHTML(date: dateStr),
+            "{{CHAT_HTML}}": chatHTML(date: dateStr, persona: persona),
             "{{ACTIONS_HTML}}": actionsHTML(letter, persona: persona),
         ]
         var html = template
@@ -126,6 +127,37 @@ enum HTMLRenderer {
           \(btn("sharp", "찔렸다")) \(btn("dull", "뻔했다")) \(btn("miss", "내 얘기와 달랐다"))
           <span class="sage-feedback-thanks">\(stamp)새겨 두었습니다. 다음 글을 지을 때 참고합니다.</span>
         </div>
+        """
+    }
+
+    // MARK: 답장 대화
+
+    /// 말풍선 하나. 현자 쪽은 작은 초상을 붙인다. JS(sageChat)도 같은 모양으로 만든다.
+    static func chatBubbleHTML(role: String, text: String, persona: Persona) -> String {
+        let body = text.components(separatedBy: "\n").map(HTMLEscape.escape).joined(separator: "<br>")
+        if role == "me" {
+            return "<div class=\"sage-msg me\"><div class=\"sage-msg-text\">\(body)</div></div>"
+        }
+        let face = hasCharacterFile(persona, "portrait.png")
+            ? "<img class=\"sage-msg-face\" src=\"../assets/characters/\(persona.id.rawValue)/portrait.png\" alt=\"\">" : ""
+        return "<div class=\"sage-msg sage\">\(face)<div class=\"sage-msg-text\"><span class=\"sage-msg-who\">\(HTMLEscape.escape(persona.displayName))</span>\(body)</div></div>"
+    }
+
+    /// 편지 아래 답장 칸 — 지난 대화를 채우고 입력 칸을 둔다. 입력은 앱 안(WKWebView)에서만 동작한다.
+    static func chatHTML(date: String, persona: Persona) -> String {
+        let log = LetterStore.chat(for: date).map { chatBubbleHTML(role: $0.role, text: $0.text, persona: persona) }.joined()
+        let face = hasCharacterFile(persona, "talking.png") ? "talking.png" : (hasCharacterFile(persona, "portrait.png") ? "portrait.png" : "")
+        return """
+        <section class="sage-chat" data-date="\(date)" data-name="\(HTMLEscape.escape(persona.displayName))" data-persona="\(persona.id.rawValue)" data-face="\(face)" data-portrait="\(hasCharacterFile(persona, "portrait.png") ? "1" : "")">
+          <h2 class="sage-chat-title">✉ \(HTMLEscape.escape(persona.displayName))에게 답장</h2>
+          <div class="sage-chat-log">\(log)</div>
+          <form class="sage-chat-form" onsubmit="return false">
+            <textarea class="sage-chat-input" rows="2" maxlength="2000" placeholder="\(HTMLEscape.escape(persona.displayName))에게 하고 싶은 말 (Enter 보내기 · Shift+Enter 줄바꿈)"></textarea>
+            <button type="button" class="sage-btn sage-chat-send">보내기</button>
+          </form>
+          <p class="sage-chat-note">나눈 말은 내일 글에서 이어받습니다.</p>
+          <p class="sage-chat-outside">답장은 SageBar 앱의 편지 창에서 보낼 수 있습니다.</p>
+        </section>
         """
     }
 
