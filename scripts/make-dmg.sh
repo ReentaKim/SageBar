@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${SAGEBAR_VERSION:-0.1.0}"
 [[ "${1:-}" == "--version" ]] && VERSION="$2"
 APP="$ROOT/dist/SageBar.app"
+"$ROOT/scripts/release-notes.sh" "$VERSION" >/dev/null || exit 1
 [[ -d "$APP" ]] || { echo "dist/SageBar.app이 없습니다. scripts/build-app.sh를 먼저 실행하세요." >&2; exit 1; }
 
 STAGE="$(mktemp -d)"
