@@ -28,7 +28,7 @@ enum ChatEngine {
         let prompt = PromptBuilder.chatPrompt(
             persona: persona,
             profile: (try? String(contentsOf: Paths.profile, encoding: .utf8)) ?? "(인물지 없음)",
-            letter: (try? String(contentsOf: LetterStore.rawURL(for: date), encoding: .utf8)) ?? "",
+            letter: LetterParser.stripRefs((try? String(contentsOf: LetterStore.rawURL(for: date), encoding: .utf8)) ?? ""),
             transcript: transcript, message: message, date: date)
         let raw = try ClaudeCLI.run(prompt: prompt, model: model, timeout: timeout)
         let answer = clean(raw)

@@ -61,7 +61,7 @@ enum HeadlessCLI {
                 let preview = Paths.letters.appendingPathComponent("preview-\(pid.rawValue).html")
                 _ = try HTMLRenderer.render(letter: parsed, persona: pid.persona,
                                             date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(),
-                                            model: model, outputURL: preview)
+                                            model: model, outputURL: preview, evidence: LetterStore.evidence(for: dateStr))
                 print(preview.path)
                 exit(0)
             }
@@ -101,8 +101,10 @@ enum HeadlessCLI {
                 }
                 let raw = try String(contentsOf: LetterStore.rawURL(for: dateStr), encoding: .utf8)
                 let parsed = try LetterParser.parse(raw)
+                // 근거 원문(refs.json)이 있으면 함께, 없으면(0.10.0 이전 편지) 근거 없이
                 let url = try HTMLRenderer.render(letter: parsed, persona: pid.persona,
-                                                  date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(), model: model)
+                                                  date: LetterStore.dateFormatter.date(from: dateStr) ?? Date(), model: model,
+                                                  evidence: LetterStore.evidence(for: dateStr))
                 LetterStore.renderIndex()
                 print(url.path)
                 exit(0)

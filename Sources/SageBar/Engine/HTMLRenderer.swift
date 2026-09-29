@@ -21,7 +21,7 @@ enum HTMLRenderer {
 
     @discardableResult
     static func render(letter: ParsedLetter, persona: Persona, date: Date, model: ClaudeModel,
-                       outputURL: URL? = nil) throws -> URL {
+                       outputURL: URL? = nil, evidence: [ConversationExtractor.Evidence] = []) throws -> URL {
         guard let template = loadResource("templates/letter.html") else {
             throw LetterParser.ParseError(message: "템플릿(templates/letter.html)을 찾을 수 없습니다.")
         }
@@ -35,6 +35,9 @@ enum HTMLRenderer {
         let prevLink = previous.map { "<a class=\"sage-btn\" href=\"\($0).html\">◀ 지난 글 보기</a>" }
             ?? "<span class=\"sage-btn sage-btn-disabled\">◀ 지난 글 보기</span>"
 
+        // 근거 번호: 발화 번호(u17) → 편지 안 번호(1, 2, …). 원문이 없는 번호는 본문에서도 지운다.
+        let refs = Dictionary(evidence.enumerated().map { ($1.id, $0 + 1) }, uniquingKeysWith: { a, _ in a })
+
         let replacements: [String: String] = [
             "{{PERSONA_ID}}": persona.id.rawValue,
             "{{PERSONA_NAME}}": HTMLEscape.escape(persona.fullTitle),
@@ -47,9 +50,10 @@ enum HTMLRenderer {
             "{{UPPER_TITLE}}": HTMLEscape.escape(persona.upperTitle),
             "{{LOWER_MARK}}": HTMLEscape.escape(persona.lowerMark),
             "{{LOWER_TITLE}}": HTMLEscape.escape(persona.lowerTitle),
-            "{{UPPER_HTML}}": LetterParser.paragraphsToHTML(letter.upper),
-            "{{LOWER_HTML}}": LetterParser.paragraphsToHTML(letter.lower),
-            "{{CLOSING_HTML}}": LetterParser.paragraphsToHTML(letter.closing),
+            "{{UPPER_HTML}}": LetterParser.paragraphsToHTML(letter.upper, refs: refs),
+            "{{LOWER_HTML}}": LetterParser.paragraphsToHTML(letter.lower, refs: refs),
+            "{{CLOSING_HTML}}": LetterParser.paragraphsToHTML(letter.closing, refs: refs),
+            "{{EVIDENCE_HTML}}": evidenceHTML(evidence),
             "{{QUOTE_KOREAN}}": HTMLEscape.escape(letter.quoteKorean),
             "{{QUOTE_SOURCE}}": HTMLEscape.escape(letter.quoteSource),
             "{{SIGNOFF}}": HTMLEscape.escape(persona.signoff),
@@ -62,7 +66,7 @@ enum HTMLRenderer {
             "{{AVATAR_HTML}}": hasBanner ? "" : avatarHTML(persona),   // 배너가 있으면 캐릭터는 배너 위에
             "{{BANNER_HTML}}": bannerHTML(persona),
             "{{BACKDROP_CSS}}": backdropCSS(persona),
-            "{{FOLLOWUP_HTML}}": followupHTML(letter, persona: persona),
+            "{{FOLLOWUP_HTML}}": followupHTML(letter, persona: persona, refs: refs),
             "{{FEEDBACK_HTML}}": feedbackHTML(date: dateStr),
             "{{CHAT_HTML}}": chatHTML(date: dateStr, persona: persona),
             "{{ACTIONS_HTML}}": actionsHTML(letter, persona: persona, date: dateStr),
@@ -71,6 +75,21 @@ enum HTMLRenderer {
         for (k, v) in replacements { html = html.replacingOccurrences(of: k, with: v) }
         try html.write(to: outURL, atomically: true, encoding: .utf8)
         return outURL
+    }
+
+    // MARK: 근거
+
+    /// 편지 끝 "이 편지가 본 말씀들" — 본문 위첨자 번호가 가리키는 발화 원문(추출기가 가진 그대로). 평소에는 접혀 있다.
+    static func evidenceHTML(_ evidence: [ConversationExtractor.Evidence]) -> String {
+        guard !evidence.isEmpty else { return "" }
+        let items = evidence.enumerated().map { i, e in
+            let text = e.text.components(separatedBy: "\n").map(HTMLEscape.escape).joined(separator: "<br>")
+            return "<li id=\"ev-\(i + 1)\"><p class=\"sage-ev-meta\">\(HTMLEscape.escape(e.date)) · \(HTMLEscape.escape(e.project))</p><blockquote>\(text)</blockquote></li>"
+        }.joined()
+        return """
+        <details class="sage-evidence"><summary>이 편지가 본 말씀들 <span class="sage-ev-count">\(evidence.count)</span></summary>\
+        <p class="sage-ev-hint">본문의 작은 번호가 가리키는, 대화 기록에 남은 말 그대로입니다.</p><ol>\(items)</ol></details>
+        """
     }
 
     // MARK: 지난 조언 점검 · 피드백
@@ -94,7 +113,7 @@ enum HTMLRenderer {
         FileManager.default.fileExists(atPath: Paths.resources.appendingPathComponent("ui/\(name)").path)
     }
 
-    static func followupHTML(_ letter: ParsedLetter, persona: Persona) -> String {
+    static func followupHTML(_ letter: ParsedLetter, persona: Persona, refs: [String: Int] = [:]) -> String {
         guard !letter.followup.isEmpty else { return "" }
         // 판정에 따라 캐릭터 표정 (reaction-pleased / reaction-stern / 없으면 portrait)
         let moodFile: String = {
@@ -115,7 +134,7 @@ enum HTMLRenderer {
           \(reaction)
           <div class="sage-followup-body">
             <h2 class="sage-section-title"><span class="mark">\(HTMLEscape.escape(persona.followupMark))</span> \(HTMLEscape.escape(persona.followupTitle))</h2>
-            \(LetterParser.paragraphsToHTML(letter.followup))
+            \(LetterParser.paragraphsToHTML(letter.followup, refs: refs))
           </div>
         </section>
         """

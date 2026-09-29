@@ -28,7 +28,7 @@ struct LetterGenerator {
 
         // 2) 재료
         onStage("최근 대화를 읽는 중")
-        let recent = ConversationExtractor.recentMarkdown(days: recentDays)
+        let (recent, evidence) = ConversationExtractor.recent(days: recentDays)
         try? recent.write(to: Paths.recent, atomically: true, encoding: .utf8)
         let profile = try String(contentsOf: Paths.profile, encoding: .utf8)
         let topics = LetterStore.recentTopics()
@@ -67,7 +67,12 @@ struct LetterGenerator {
         onStage("두루마리에 옮기는 중")
         // 같은 날짜를 다시 지으면 옛 편지에 대한 대화는 치워 둔다 (새 편지 밑에 붙지 않게)
         if LetterStore.hasLetter(for: dateStr) { LetterStore.archiveChat(for: dateStr) }
-        let url = try HTMLRenderer.render(letter: parsed, persona: persona, date: date, model: model)
+        // 근거: 편지가 가리킨 번호 가운데 발췌에 실제로 있는 것만, 추출기가 가진 원문으로 남긴다
+        let cited = Self.citedEvidence(parsed, from: evidence)
+        let unknown = parsed.citedRefs.count - cited.count
+        LetterStore.log("[\(id.rawValue)] 근거 \(cited.count)개\(unknown > 0 ? " (없는 번호 \(unknown)개 버림)" : "")")
+        LetterStore.saveEvidence(cited, for: dateStr)
+        let url = try HTMLRenderer.render(letter: parsed, persona: persona, date: date, model: model, evidence: cited)
         LetterStore.appendHistory(HistoryEntry(date: dateStr, persona: id.rawValue, subtitle: parsed.subtitle,
                                                actions: parsed.actions.isEmpty ? nil : parsed.actions,
                                                mood: parsed.followupMood.isEmpty ? nil : parsed.followupMood))
@@ -86,5 +91,11 @@ struct LetterGenerator {
             }
         }
         return Result(url: url, parsed: parsed, hanjaCount: hanja)
+    }
+
+    /// 편지에 나온 순서대로, 발췌에 있는 번호의 원문만
+    static func citedEvidence(_ letter: ParsedLetter, from evidence: [ConversationExtractor.Evidence]) -> [ConversationExtractor.Evidence] {
+        let byID = Dictionary(evidence.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return letter.citedRefs.compactMap { byID[$0] }
     }
 }

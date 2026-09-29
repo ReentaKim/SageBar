@@ -34,6 +34,9 @@ struct ParsedLetter {
     }
 
     func isTooLong(_ length: LetterLength) -> Bool { Double(totalCount) > Double(target(length)) * 1.5 }
+
+    /// 본문(점검·상편·하편·맺음)이 근거로 가리킨 발화 번호 — 처음 나온 순서대로, 중복 없이
+    var citedRefs: [String] { LetterParser.refIDs(in: [followup, upper, lower, closing].joined(separator: "\n")) }
 }
 
 enum LetterParser {
@@ -42,9 +45,47 @@ enum LetterParser {
         var errorDescription: String? { message }
     }
 
-    /// 공백류를 제외한 문자 수
+    /// 근거 표식 [[u17]] (여럿이면 [[u3, u8]]). 앞의 공백까지 한 덩이로 잡아, 떼어 내면 문장이 붙는다.
+    static let refPattern = #"\s*\[\[\s*(u\d+(?:\s*[,，·/ ]\s*u\d+)*)\s*\]\]"#
+
+    static func refIDs(inMarker body: String) -> [String] {
+        body.split(whereSeparator: { ",，·/ ".contains($0) }).map(String.init).filter { !$0.isEmpty }
+    }
+
+    /// 글에 나온 근거 번호들 — 처음 나온 순서대로, 중복 없이
+    static func refIDs(in text: String) -> [String] {
+        guard let re = try? NSRegularExpression(pattern: refPattern) else { return [] }
+        var seen = Set<String>(), out: [String] = []
+        for m in re.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+            guard let r = Range(m.range(at: 1), in: text) else { continue }
+            for id in refIDs(inMarker: String(text[r])) where seen.insert(id).inserted { out.append(id) }
+        }
+        return out
+    }
+
+    static func stripRefs(_ text: String) -> String {
+        text.replacingOccurrences(of: refPattern, with: "", options: .regularExpression)
+    }
+
+    /// 표식을 위첨자 번호로. refs(발화 번호 → 편지 안 번호)에 없는 번호는 버리고, 하나도 안 남으면 표식째 없앤다.
+    static func refsToHTML(_ html: String, refs: [String: Int]) -> String {
+        guard let re = try? NSRegularExpression(pattern: refPattern) else { return html }
+        var out = "", last = html.startIndex
+        for m in re.matches(in: html, range: NSRange(html.startIndex..., in: html)) {
+            guard let whole = Range(m.range, in: html), let body = Range(m.range(at: 1), in: html) else { continue }
+            out += html[last..<whole.lowerBound]
+            let nums = refIDs(inMarker: String(html[body])).compactMap { refs[$0] }
+            if !nums.isEmpty {
+                out += "<sup class=\"sage-ref\">" + nums.map { "<a href=\"#ev-\($0)\">\($0)</a>" }.joined(separator: ",") + "</sup>"
+            }
+            last = whole.upperBound
+        }
+        return out + html[last...]
+    }
+
+    /// 공백류를 제외한 문자 수 (근거 표식은 세지 않는다)
     static func charCount(_ text: String) -> Int {
-        text.unicodeScalars.filter { !CharacterSet.whitespacesAndNewlines.contains($0) }.count
+        stripRefs(text).unicodeScalars.filter { !CharacterSet.whitespacesAndNewlines.contains($0) }.count
     }
 
     /// 한자(CJK 통합 한자) 글자 수 — 0이어야 정상
@@ -74,7 +115,7 @@ enum LetterParser {
     static func parse(_ raw: String) throws -> ParsedLetter {
         // 코드블록 울타리가 섞여 오면 벗긴다
         let text = raw.replacingOccurrences(of: "```", with: "")
-        let subtitle = firstMatch("^SUBTITLE:\\s*(.+)$", in: text, options: .anchorsMatchLines) ?? ""
+        let subtitle = stripRefs(firstMatch("^SUBTITLE:\\s*(.+)$", in: text, options: .anchorsMatchLines) ?? "")
         let followupRaw = section("FOLLOWUP", next: ["UPPER"], in: text)
         let followupMood = firstMatch("^FOLLOWUP_MOOD:\\s*(\\w+)", in: followupRaw, options: .anchorsMatchLines)?.lowercased() ?? ""
         let followup = followupRaw.replacingOccurrences(of: "(?m)^FOLLOWUP_MOOD:.*$", with: "", options: .regularExpression)
@@ -88,11 +129,12 @@ enum LetterParser {
         let actions: [String] = actionsBlock.components(separatedBy: "\n")
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .map { $0.replacingOccurrences(of: "^([-•*]|\\d+[.)])\\s*", with: "", options: .regularExpression) }
+            .map(stripRefs)
             .filter { !$0.isEmpty && !$0.hasPrefix("QUOTE_") && !$0.hasPrefix("(") }
             .prefix(3).map { String($0) }
 
-        let quoteKorean = firstMatch("^QUOTE_KOREAN:\\s*(.+)$", in: tail, options: .anchorsMatchLines) ?? ""
-        let quoteSource = firstMatch("^QUOTE_SOURCE:\\s*(.+)$", in: tail, options: .anchorsMatchLines) ?? ""
+        let quoteKorean = stripRefs(firstMatch("^QUOTE_KOREAN:\\s*(.+)$", in: tail, options: .anchorsMatchLines) ?? "")
+        let quoteSource = stripRefs(firstMatch("^QUOTE_SOURCE:\\s*(.+)$", in: tail, options: .anchorsMatchLines) ?? "")
         var closing = closingBlock
         for key in ["QUOTE_KOREAN", "QUOTE_SOURCE"] {
             closing = closing.replacingOccurrences(of: "(?m)^\(key):.*$", with: "", options: .regularExpression)
@@ -113,8 +155,8 @@ enum LetterParser {
     }
 
     /// 빈 줄로 구분된 문단을 <p>로, "### "로 시작하는 줄을 소제목으로.
-    /// 번호 매긴 줄(니체의 격언 등)은 각각 별도 문단으로 취급한다.
-    static func paragraphsToHTML(_ block: String) -> String {
+    /// 번호 매긴 줄(니체의 격언 등)은 각각 별도 문단으로 취급한다. 근거 표식은 문단에서는 위첨자로, 소제목에서는 뗀다.
+    static func paragraphsToHTML(_ block: String, refs: [String: Int] = [:]) -> String {
         var out: [String] = []
         let chunks = block.trimmingCharacters(in: .whitespacesAndNewlines)
             .components(separatedBy: "\n\n")
@@ -123,7 +165,7 @@ enum LetterParser {
             let chunk = rawChunk.trimmingCharacters(in: .whitespacesAndNewlines)
             if chunk.isEmpty { continue }
             if chunk.hasPrefix("### ") || chunk.hasPrefix("## ") {
-                let title = chunk.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces)
+                let title = stripRefs(chunk.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces))
                 out.append("<h3 class=\"sage-h3\"><span class=\"dot\">●</span>\(inlineMarkdown(HTMLEscape.escape(title)))</h3>")
             } else {
                 // 소제목이 문단과 한 덩이로 붙어 온 경우 분리
@@ -132,13 +174,13 @@ enum LetterParser {
                 func flush() {
                     if buffer.isEmpty { return }
                     let escaped = HTMLEscape.escape(buffer.joined(separator: "\n")).replacingOccurrences(of: "\n", with: "<br>")
-                    out.append("<p>\(inlineMarkdown(escaped))</p>")
+                    out.append("<p>\(refsToHTML(inlineMarkdown(escaped), refs: refs))</p>")
                     buffer.removeAll()
                 }
                 for line in lines {
                     if line.hasPrefix("### ") || line.hasPrefix("## ") {
                         flush()
-                        let title = line.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces)
+                        let title = stripRefs(line.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces))
                         out.append("<h3 class=\"sage-h3\"><span class=\"dot\">●</span>\(inlineMarkdown(HTMLEscape.escape(title)))</h3>")
                     } else if line.range(of: "^\\d+\\.\\s", options: .regularExpression) != nil {
                         flush()

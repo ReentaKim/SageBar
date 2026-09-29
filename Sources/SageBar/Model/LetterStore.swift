@@ -72,6 +72,20 @@ enum LetterStore {
     static func dateString(_ date: Date = Date()) -> String { dateFormatter.string(from: date) }
     static func letterURL(for date: String) -> URL { Paths.letters.appendingPathComponent("\(date).html") }
     static func rawURL(for date: String) -> URL { Paths.raw.appendingPathComponent("\(date).txt") }
+    /// 편지가 근거로 가리킨 발화 원문들 (0.10.0~). 없으면 옛 편지 — 근거 목록 없이 엮는다.
+    static func evidenceURL(for date: String) -> URL { Paths.raw.appendingPathComponent("\(date).refs.json") }
+
+    static func saveEvidence(_ items: [ConversationExtractor.Evidence], for date: String) {
+        let url = evidenceURL(for: date)
+        guard !items.isEmpty else { try? FileManager.default.removeItem(at: url); return }
+        let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .withoutEscapingSlashes]
+        try? enc.encode(items).write(to: url, options: .atomic)
+    }
+
+    static func evidence(for date: String) -> [ConversationExtractor.Evidence] {
+        guard let data = try? Data(contentsOf: evidenceURL(for: date)) else { return [] }
+        return (try? JSONDecoder().decode([ConversationExtractor.Evidence].self, from: data)) ?? []
+    }
     static func hasLetter(for date: String) -> Bool { FileManager.default.fileExists(atPath: letterURL(for: date).path) }
 
     // MARK: 로그

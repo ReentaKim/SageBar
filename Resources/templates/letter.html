@@ -46,6 +46,7 @@
     </div>
 
     <div class="sage-seal" aria-hidden="true">{{SEAL_SVG}}</div>
+    {{EVIDENCE_HTML}}
   </div>
 
   {{FEEDBACK_HTML}}
@@ -74,6 +75,19 @@ function sagePrint() {
     b.addEventListener('click', function () {
       try { localStorage.setItem(key, b.dataset.v); } catch (e) {}
       mark(b.dataset.v);   // 링크 이동(sagebar://)은 그대로 진행 — 앱이 받아 기록한다
+    });
+  });
+})();
+// 근거 번호를 누르면 접힌 "이 편지가 본 말씀들"을 펼치고 그 말로 옮겨 잠깐 밝힌다
+(function () {
+  var box = document.querySelector('.sage-evidence'); if (!box) return;
+  document.querySelectorAll('.sage-ref a').forEach(function (a) {
+    a.addEventListener('click', function (ev) {
+      var li = document.querySelector(a.getAttribute('href')); if (!li) return;
+      ev.preventDefault();
+      box.open = true;
+      li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      li.classList.remove('is-lit'); void li.offsetWidth; li.classList.add('is-lit');
     });
   });
 })();

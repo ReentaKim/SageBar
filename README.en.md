@@ -79,6 +79,7 @@ By default they **rotate daily**. In Settings you can pin one, randomize, or exc
 4. **No Chinese characters** — all four sages write in pure Hangul. If any slip through, it's logged.
 5. **Follow-up** — every letter ends with three concrete action items; the next letter opens by checking them against your conversations since ("done / not done / can't tell"). Advice carries over instead of resetting daily.
 6. **Feedback** — two buttons under each letter: *it stung* / *it was obvious*. Reactions feed the next prompt, so a run of "obvious" pushes the sage toward fewer generalities and more direct quotes.
+7. **Evidence** — wherever a letter points at something you said, a small number appears; the "words this letter read" list at the end shows those utterances verbatim from your conversation logs.
 
 ## Install
 
@@ -138,7 +139,7 @@ Headless test from a terminal:
 |---|---|---|
 | `~/.claude/projects/**/*.jsonl` | Claude Code conversation logs | **Read only.** Only `type == "user"` messages you typed yourself; tool-injected content and sidechains are skipped. |
 | `~/.claude/plans/*.md` | Plan titles and first paragraphs | Read only |
-| `~/Library/Application Support/SageBar/` | Profile, recent excerpts, letters (HTML), raw output, history, logs | All local. Delete with the app if you like. |
+| `~/Library/Application Support/SageBar/` | Profile, recent excerpts, letters (HTML), raw output, the utterances a letter cites (`raw/<date>.refs.json`), history, logs | All local. Delete with the app if you like. |
 
 - Apart from a daily version check (below), the app itself makes **no network requests**. The other outbound traffic is the `claude` CLI call to Anthropic, whose prompt contains your profile and recent prompt excerpts — the same kind of content that already goes there when you use Claude Code.
 - **You choose what is read.** Settings › 읽는 범위 (Scope) lets you turn each project on or off; conversations from a project you turn off are never used in letters, the profile or replies. Plan documents can be turned off too. After changing the scope, press "인물지 새로 짓기" (rebuild profile from scratch) so nothing from excluded projects remains in the old profile.

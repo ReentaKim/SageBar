@@ -454,3 +454,23 @@ body {
 .sage-chat.outside .sage-chat-outside { display: block; }
 @media (max-width: 640px) { .sage-msg-face { display: none; } .sage-msg { max-width: 100%; } }
 @media print { .sage-chat-form, .sage-chat-note, .sage-chat-outside { display: none; } .sage-chat { box-shadow: none; } }
+
+/* ── 근거 (0.10.0): 본문 위첨자 번호 → 편지 끝 "이 편지가 본 말씀들" ── */
+.sage-ref { font-size: .62em; line-height: 0; margin-left: 1px; }
+.sage-ref a { color: var(--vermilion); text-decoration: none; font-weight: 700; padding: 0 1px; }
+.sage-ref a:hover { text-decoration: underline; }
+.sage-evidence { margin: 26px 0 0; padding-top: 12px; border-top: 1px dashed var(--gold); font-size: 14px; line-height: 1.7; }
+.sage-evidence summary { cursor: pointer; color: var(--ink-soft); font-weight: 700; letter-spacing: .04em; }
+.sage-evidence summary:hover { color: var(--vermilion); }
+.sage-ev-count { display: inline-block; min-width: 1.5em; padding: 0 .4em; margin-left: 4px; border-radius: 999px;
+  font-size: 12px; text-align: center; color: var(--hanji); background: var(--vermilion); }
+.sage-ev-hint { margin: 8px 0 6px; font-size: 12px; color: var(--ink-soft); }
+.sage-evidence ol { margin: 0; padding-left: 1.6em; }
+.sage-evidence li { margin: 0 0 10px; padding: 4px 8px; border-radius: 4px; transition: background-color .6s; }
+.sage-evidence li::marker { color: var(--vermilion); font-weight: 700; }
+.sage-evidence li.is-lit { animation: sage-ev-lit 1.6s ease-out; }
+@keyframes sage-ev-lit { from { background-color: rgba(176, 141, 62, .35); } to { background-color: transparent; } }
+.sage-ev-meta { margin: 0; font-size: 12px; color: var(--ink-soft); }
+.sage-evidence blockquote { margin: 2px 0 0; padding-left: 10px; border-left: 2px solid var(--gold); color: var(--ink);
+  white-space: normal; overflow-wrap: anywhere; }
+@media print { .sage-ev-hint { display: none; } }

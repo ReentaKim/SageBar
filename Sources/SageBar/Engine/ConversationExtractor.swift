@@ -127,6 +127,11 @@ enum ConversationExtractor {
         t.replacingOccurrences(of: #"\[Image:[^\]]*\]"#, with: "(이미지 첨부)", options: .regularExpression)
     }
 
+    /// 붙여 넣은 글을 감싼 <pasted_content …> 태그는 떼고 내용만 남긴다 (편지 근거 목록에 태그가 보이지 않게)
+    static func stripPasteTags(_ t: String) -> String {
+        t.replacingOccurrences(of: #"</?pasted_content[^>]*>"#, with: "", options: .regularExpression)
+    }
+
     static func truncate(_ t: String) -> String {
         let s = t.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.count > maxCharsPerMessage {
@@ -158,7 +163,7 @@ enum ConversationExtractor {
                 for raw in extractTexts(msg["content"]) {
                     let t = shrinkImageTags(raw.trimmingCharacters(in: .whitespacesAndNewlines))
                     if shouldSkip(t) { continue }
-                    let cut = truncate(t)
+                    let cut = truncate(stripPasteTags(t))
                     if !cut.isEmpty { rows.append(Utterance(timestamp: ts, project: "", folder: folder, text: cut)) }
                 }
             }
@@ -203,22 +208,38 @@ enum ConversationExtractor {
         s.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
     }
 
-    /// 최근 N일치 발화를 시간순 마크다운으로.
-    static func recentMarkdown(days: Int) -> String {
+    /// 편지가 근거로 가리킬 수 있는 발화 하나. id는 발췌 안에서만 통하는 번호(u1, u2, …).
+    /// 편지 끝 "이 편지가 본 말씀들"에는 모델이 옮긴 말이 아니라 여기 담긴 원문을 그대로 보인다.
+    struct Evidence: Codable, Equatable {
+        let id: String
+        let date: String
+        let project: String
+        let text: String
+    }
+
+    /// 발화마다 번호를 붙여 발췌 목록으로. 번호는 시간순 u1부터.
+    static func numbered(_ rows: [Utterance]) -> [Evidence] {
+        rows.enumerated().map { i, r in
+            Evidence(id: "u\(i + 1)", date: r.timestamp.isEmpty ? "????-??-??" : String(r.timestamp.prefix(10)),
+                     project: r.project, text: r.text)
+        }
+    }
+
+    /// 최근 N일치 발화를 시간순 마크다운으로. 줄마다 [u17 · 날짜 · 프로젝트] 번호를 달고, 같은 목록을 함께 돌려준다.
+    static func recent(days: Int) -> (markdown: String, evidence: [Evidence]) {
         let since = Date().addingTimeInterval(-Double(days) * 86400)
         let cutoff = ISO8601DateFormatter().string(from: since)
-        let rows = utterances(in: jsonlFiles(modifiedSince: since)).filter { $0.timestamp >= cutoff }
-        var out = "# 최근 \(days)일 발화 발췌 (\(rows.count)건)\n\n"
-        for r in rows {
-            let date = r.timestamp.isEmpty ? "????-??-??" : String(r.timestamp.prefix(10))
-            out += "- [\(date) · \(r.project)] \(oneLine(r.text))\n"
+        let evidence = numbered(utterances(in: jsonlFiles(modifiedSince: since)).filter { $0.timestamp >= cutoff })
+        var out = "# 최근 \(days)일 발화 발췌 (\(evidence.count)건)\n\n"
+        for e in evidence {
+            out += "- [\(e.id) · \(e.date) · \(e.project)] \(oneLine(e.text))\n"
         }
         let plans = loadPlans()
         if !plans.isEmpty {
             out += "\n# 계획 문서 (\(plans.count)건)\n\n"
             for p in plans { out += "- [\(p.mtime) · \(p.file)] \(p.title) — \(p.firstParagraph)\n" }
         }
-        return out
+        return (out, evidence)
     }
 
     /// 전체 발화를 프로젝트별로 묶은 마크다운 (인물지 작성용). 너무 길면 뒤쪽(최근)을 남기고 자른다.
