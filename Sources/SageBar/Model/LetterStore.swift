@@ -35,11 +35,18 @@ enum Paths {
         if let env = ProcessInfo.processInfo.environment["SAGEBAR_RESOURCES"] {
             return URL(fileURLWithPath: env, isDirectory: true)
         }
+        #if DEBUG
         // swift run 개발 모드: Sources/SageBar/Model/LetterStore.swift → 저장소 루트/Resources
+        // (#filePath는 빌드한 맥의 절대 경로를 바이너리에 남기므로 디버그 빌드에서만 쓴다)
         let here = URL(fileURLWithPath: #filePath)
         return here.deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Resources", isDirectory: true)
+        #else
+        // 릴리스 바이너리를 앱 번들 밖에서 돌릴 때: 실행 위치(저장소 루트)의 Resources
+        return URL(fileURLWithPath: fm.currentDirectoryPath, isDirectory: true)
+            .appendingPathComponent("Resources", isDirectory: true)
+        #endif
     }()
 }
 
